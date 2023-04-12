@@ -6,7 +6,7 @@ requirements = [
 
 setup(
     name="Ionizer",
-    version="0.1",
+    version="0.1.1",
     description="PennyLane tools for compilation into trapped-ion native gates.",
     author="UBC Quantum Software and Algorithms Research Group",
     url="https://github.com/QSAR-UBC/ionizer",
