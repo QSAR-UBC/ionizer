@@ -13,8 +13,8 @@ from pennylane import math
 from .ops import GPI, GPI2
 from .utils import are_mats_equivalent
 
-DOUBLE_IDENTITY_FILE = files("resources").joinpath("double_gate_identities.pkl")
-TRIPLE_IDENTITY_FILE = files("resources").joinpath("triple_gate_identities.pkl")
+DOUBLE_IDENTITY_FILE = files("ionizer.resources").joinpath("double_gate_identities.pkl")
+TRIPLE_IDENTITY_FILE = files("ionizer.resources").joinpath("triple_gate_identities.pkl")
 
 
 def generate_gate_identities():
