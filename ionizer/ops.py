@@ -17,11 +17,14 @@
 """
 Native gates for IonQ hardware as PennyLane operations.
 """
+import functools
+
 import numpy as np
 
 import pennylane as qml
 from pennylane.operation import Operation
 
+stack_last = functools.partial(qml.math.stack, axis=-1)
 
 class GPI(Operation):
     r"""
@@ -89,7 +92,9 @@ class GPI2(Operation):
     num_wires = 1
     num_params = 1
     ndim_params = (0,)
-
+    grad_method = "A"
+    parameter_frequencies = [(1,)]
+    
     def __init__(self, phi, wires, do_queue=True, id=None):
         super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
 
@@ -109,10 +114,16 @@ class GPI2(Operation):
         array([[ 0.70710678+0.j        , -0.33900505-0.62054458j],
                [ 0.33900505-0.62054458j,  0.70710678+0.j        ]])
         """
-        exponent = -1j * phi
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        exponent = (0 -1j) * phi
+        a = (1 + 0j) / qml.math.sqrt(2)
+        b = ((0 - 1j) * qml.math.exp(exponent)) / qml.math.sqrt(2)
+        c = ((0 - 1j) * qml.math.exp(qml.math.conj(exponent))) / qml.math.sqrt(2)
         return qml.math.stack(
-            [[1, -1j * qml.math.exp(exponent)], [-1j * qml.math.exp(qml.math.conj(exponent)), 1]]
-        ) / np.sqrt(2)
+            qml.math.stack([stack_last([a, b]), stack_last([c, a])])
+        )
 
     def adjoint(self):
         return GPI2(self.data[0] + np.pi, self.wires)
