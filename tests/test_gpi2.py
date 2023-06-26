@@ -6,7 +6,7 @@ import torch
 import jax
 
 import pennylane as qml
-import numpy as np
+from pennylane import numpy as np
 import tensorflow as tf
 from ionizer.ops import GPI2
 
@@ -56,15 +56,15 @@ class TestGPI2:
         phi_grad = None
         if interface == "jax":
             grad_fcn = jax.grad(qnode)
-            assert grad_fcn(phi) == 4.3661002990646334e-17
+            assert jax.numpy.isclose(grad_fcn(phi), 4.3661002990646334e-17)
         elif interface == "torch":
             phi.requires_grad = True
             result = qnode(phi)
             result.backward()
-            assert float(phi.grad) == 2.9802322387695312e-08
+            assert np.isclose(float(phi.grad), 2.9802322387695312e-08)
         elif interface == "tf":
             with tf.GradientTape() as tape:
                 loss = qnode(phi)
-            assert float(tape.gradient(loss, [phi])[0]) == 0.0
+            assert np.isclose(float(tape.gradient(loss, [phi])[0]), 0.0)
         else:
-            assert qml.grad(qnode, argnum=0)(phi) == 5.551115123125783e-17
+            assert  np.isclose(qml.grad(qnode, argnum=0)(phi), 5.551115123125783e-17)
