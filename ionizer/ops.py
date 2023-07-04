@@ -67,12 +67,12 @@ class GPI(Operation):
         array([[0.        +0.j        , 0.95533649-0.29552021j],
                [0.95533649+0.29552021j, 0.        +0.j        ]])
         """
-        if qml.math.get_instance(phi) == "tensorflow":
+        if qml.math.get_interface(phi) == "tensorflow":
                 phi = qml.math.cast_like(phi, 1j)
 
-        a = (0 + 0j) / qml.math.sqrt(2)
-        b = qml.math.exp((0 - 1j) * phi) / qml.math.sqrt(2)
-        c = qml.math.exp((0 + 1j) * phi) / qml.math.sqrt(2)
+        a = (0 + 0j)
+        b = qml.math.exp((0 - 1j) * phi)
+        c = qml.math.exp((0 + 1j) * phi)
         return qml.math.stack(
             qml.math.stack([stack_last([a, b]), stack_last([c, a])])
         )
