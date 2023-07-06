@@ -13,15 +13,9 @@ from ionizer.ops import GPI
 
 jax.config.update("jax_enable_x64", True)
 
-interfaces = [
-        "autograd",
-        "torch",
-        "tf",
-        "jax",
-        "auto",
-        None
-    ]
+interfaces = ["autograd", "torch", "tf", "jax", "auto", None]
 two_pi = 2 * np.pi
+
 
 def get_GPI_matrix(phi):
     return np.array([[0, math.exp(-1j * phi)], [math.exp(1j * phi), 0]])
@@ -29,18 +23,18 @@ def get_GPI_matrix(phi):
 
 class TestGPI:
     @staticmethod
-    def circuit(phi): 
+    def circuit(phi):
         qml.Hadamard(wires=0)
         GPI(phi, wires=0)
         return qml.expval(qml.PauliZ(wires=0))
-    
+
     @staticmethod
-    def circuit_unitary(phi): 
+    def circuit_unitary(phi):
         qml.Hadamard(wires=0)
         gpi_matrix = get_GPI_matrix(phi)
         qml.QubitUnitary(gpi_matrix, wires=0)
         return qml.expval(qml.PauliZ(wires=0))
-    
+
     @staticmethod
     def interface_array(x, interface):
         match interface:
@@ -55,7 +49,7 @@ class TestGPI:
                 return tf.Variable(x)
             case _:
                 return qml.numpy.array(x)
-            
+
     @pytest.mark.parametrize("interface", interfaces)
     def test_GPI_compute_matrix(self, interface):
         phi_rand = np.random.rand() * two_pi
@@ -66,12 +60,12 @@ class TestGPI:
             gpi_matrix = GPI.compute_matrix(phi_interface)
 
             check_matrix = get_GPI_matrix(phi_value)
-            
+
             assert math.allclose(gpi_matrix, check_matrix)
 
     @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_circuit(self, interface): 
-        phi = np.random.rand() * two_pi 
+    def test_GPI_circuit(self, interface):
+        phi = np.random.rand() * two_pi
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
@@ -82,7 +76,6 @@ class TestGPI:
         val_GPI = qnode_GPI(phi_GPI)
 
         assert np.isclose(val_GPI, val_unitary)
-
 
     @pytest.mark.parametrize("interface", interfaces)
     def test_GPI_grad(self, interface):
@@ -114,8 +107,7 @@ class TestGPI:
                 with pytest.raises(Exception):
                     grad_GPI = qml.grad(qnode_GPI, argnum=0)(phi_GPI)
                 return
-            
+
             case _:
                 grad_GPI = qml.grad(qnode_GPI, argnum=0)(phi_GPI)
         assert np.isclose(grad_GPI, grad_unitary)
-
