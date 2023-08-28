@@ -13,6 +13,8 @@ setup(
     packages=["ionizer", "ionizer.resources"],
     include_package_data=True,
     package_data={
-        "ionizer.resources": ["double_gate_identities.pkl", "triple_gate_identities.pkl"]
-    },
+        "ionizer.resources": [
+            "double_gate_identities.pkl",
+            "triple_gate_identities.pkl"
+        ]},
 )
