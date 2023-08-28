@@ -1,0 +1,7 @@
+Metadata-Version: 2.1
+Name: Ionizer
+Version: 0.1.1
+Summary: PennyLane tools for compilation into trapped-ion native gates.
+Home-page: https://github.com/QSAR-UBC/ionizer
+Author: UBC Quantum Software and Algorithms Research Group
+License-File: LICENSE

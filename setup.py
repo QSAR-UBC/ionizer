@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages, find_namespace_packages
 
 requirements = [
-    "pennylane>=0.29",
+    "0.29<=pennylane<0.32",
 ]
 
 setup(

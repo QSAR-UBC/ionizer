@@ -49,11 +49,13 @@ class GPI(Operation):
     grad_method = "A"
     parameter_frequencies = [(1,)]
 
-    def generator(self):
-        pass  # TODO
+    #def generator(self):
+    #    X_gen = np.cos(self.phi) * PauliX(wires=self.wires)
+    #    Y_gen = np.sin(self.phi) * PauliY(wires=self.wires)
+    #    return np.pi / 2 * (np.eye(2) - X_gen - Y_gen)
 
     def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+        super().__init__(phi, do_queue=do_queue, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi):  # pylint: disable=arguments-differ
