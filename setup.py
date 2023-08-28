@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages, find_namespace_packages
 
 requirements = [
-    "pennylane>=0.29",
+    "pennylane>=0.32",
 ]
 
 setup(
@@ -12,8 +12,7 @@ setup(
     url="https://github.com/QSAR-UBC/ionizer",
     packages=["ionizer", "ionizer.resources"],
     include_package_data=True,
-    package_data={"ionizer.resources": [
-        "double_gate_identities.pkl",
-        "triple_gate_identities.pkl"
-    ]}
+    package_data={
+        "ionizer.resources": ["double_gate_identities.pkl", "triple_gate_identities.pkl"]
+    },
 )
