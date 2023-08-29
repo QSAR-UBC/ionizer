@@ -43,8 +43,8 @@ class GPI(Operation):
     num_params = 1
     ndim_params = (0,)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi):  # pylint: disable=arguments-differ
@@ -90,8 +90,8 @@ class GPI2(Operation):
     num_params = 1
     ndim_params = (0,)
 
-    def __init__(self, phi, wires, do_queue=True, id=None):
-        super().__init__(phi, wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, phi, wires, id=None):
+        super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
     def compute_matrix(phi):  # pylint: disable=arguments-differ
@@ -141,8 +141,8 @@ class MS(Operation):
     num_wires = 2
     num_params = 0
 
-    def __init__(self, wires, do_queue=True, id=None):
-        super().__init__(wires=wires, do_queue=do_queue, id=id)
+    def __init__(self, wires, id=None):
+        super().__init__(wires=wires, id=id)
 
     @staticmethod
     def compute_matrix():  # pylint: disable=arguments-differ
