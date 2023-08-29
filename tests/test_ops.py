@@ -78,7 +78,19 @@ class TestGPI:
         assert np.isclose(val_GPI, val_unitary)
 
     @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_grad(self, interface):
+    def test_GPI_grad(self, interface): # TODO test against theoretical grad
+        # a = 0.96770153 - 0.00249792j
+        # b = 0.04991671 - 0.24709477j
+        # # a = 1/np.sqrt(2)
+        # # b = 1/np.sqrt(2)
+        # a_conj_b = a * np.conj(b)
+        # b_conj_a = b * np.conj(a)
+        # theoretical_val = 1j * b_conj_a * np.exp(-2j * phi) - 1j * a_conj_b * np.exp(2j * phi)
+        # theoretical_grad = 1j * b_conj_a * np.exp(-2j * phi) * (-2j) - 1j * a_conj_b * np.exp(2j * phi) * 2j
+        # print(theoretical_val)
+        # print(np.isclose(theoretical_val, val_GPI))
+        # print(theoretical_grad)
+        # print(np.isclose(theoretical_grad, grad_GPI))
         phi = np.random.rand() * two_pi
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
