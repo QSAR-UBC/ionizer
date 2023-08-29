@@ -127,7 +127,7 @@ def virtualize_rz_gates(tape):
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
     """
-    list_copy = tape.operations
+    list_copy = tape.operations.copy()
 
     while len(list_copy) > 0:
         current_gate = list_copy[0]
