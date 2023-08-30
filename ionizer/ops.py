@@ -46,17 +46,19 @@ class GPI(Operation):
     num_wires = 1
     num_params = 1
     ndim_params = (0,)
-    #grad_method = "A"
+    grad_method = "A"
     parameter_frequencies = [(1,)]
 
-<<<<<<< HEAD
     def generator(self):
-        X_gen = np.cos(self.phi) * PauliX(wires=self.wires)
-        Y_gen = np.sin(self.phi) * PauliY(wires=self.wires)
-        return np.pi / 2 * (np.eye(2) - X_gen - Y_gen)
+        """Generator for GPI"""
+        phi = self.data[0]
+        c = (np.pi / 2)/phi
+        coeffs = [c, -c * qml.math.cos(phi), -c * qml.math.sin(phi)]
+        observables = [qml.Identity(wires=self.wires), qml.PauliX(wires=self.wires), qml.PauliY(wires=self.wires)]
+        
+        return qml.Hamiltonian(coeffs, observables)
+        #return c*qml.Identity(wires=self.wires) - c * qml.math.cos(self.data[0]) * qml.PauliX(wires=self.wires) - c * qml.math.sin(self.data[0]) * qml.PauliY(wires=self.wires)
 
-=======
->>>>>>> main
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
 

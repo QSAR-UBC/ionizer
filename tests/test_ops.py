@@ -14,26 +14,38 @@ from ionizer.ops import GPI
 jax.config.update("jax_enable_x64", True)
 
 interfaces = ["autograd", "torch", "tf", "jax", "auto", None]
+diff_methods = ["best", "device", "backprop", "adjoint", "parameter-shift", "hadamard", "finite-diff", "spsa"]
 two_pi = 2 * np.pi
 
 
 def get_GPI_matrix(phi):
     return np.array([[0, math.exp(-1j * phi)], [math.exp(1j * phi), 0]])
 
+class State:
+    @staticmethod
+    def set_state():
+        qml.RX(0.2, wires=0)
+        qml.RY(1.1, wires=0)
+        qml.RX(0.3, wires=0)
+    
+    @classmethod
+    @qml.qnode(qml.device("default.qubit", wires=1))
+    def get_state(cls):
+        cls.set_state()
+        return qml.state()
+    
+    def __init__(self):
+        self.state = self.get_state() 
+        self.a_conj_b = self.state[0] * np.conj(self.state[1])
+        self.b_conj_a = self.state[1] * np.conj(self.state[0])
+
 
 class TestGPI:
     @staticmethod
     def circuit(phi):
-        qml.Hadamard(wires=0)
+        State.set_state()
         GPI(phi, wires=0)
-        return qml.expval(qml.PauliZ(wires=0))
-
-    @staticmethod
-    def circuit_unitary(phi):
-        qml.Hadamard(wires=0)
-        gpi_matrix = get_GPI_matrix(phi)
-        qml.QubitUnitary(gpi_matrix, wires=0)
-        return qml.expval(qml.PauliZ(wires=0))
+        return qml.expval(qml.PauliY(wires=0))
 
     @staticmethod
     def interface_array(x, interface):
@@ -49,6 +61,10 @@ class TestGPI:
                 return tf.Variable(x)
             case _:
                 return qml.numpy.array(x)
+    
+    @pytest.fixture(autouse=True)
+    def state(self):
+        self._state = State()
 
     @pytest.mark.parametrize("interface", interfaces)
     def test_GPI_compute_matrix(self, interface):
@@ -70,35 +86,28 @@ class TestGPI:
         dev = qml.device("default.qubit", wires=1)
 
         qnode_GPI = qml.QNode(self.circuit, dev, interface=interface)
-        qnode_unitary = qml.QNode(self.circuit_unitary, dev)
-
-        val_unitary = qnode_unitary(phi)
         val_GPI = qnode_GPI(phi_GPI)
 
-        assert np.isclose(val_GPI, val_unitary)
+        expected_inner_product_1 = 1j * self._state.b_conj_a * np.exp(-2j * phi)
+        expected_inner_product_2 = - 1j * self._state.a_conj_b * np.exp(2j * phi)
+        expected_val =  expected_inner_product_1 + expected_inner_product_2
+        print(val_GPI-expected_val)
+        assert np.isclose(val_GPI, expected_val, atol=1e-07), f"Given val: {val_GPI}; Expected val: {expected_val}"
 
     @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_grad(self, interface): # TODO test against theoretical grad
-        # a = 0.96770153 - 0.00249792j
-        # b = 0.04991671 - 0.24709477j
-        # # a = 1/np.sqrt(2)
-        # # b = 1/np.sqrt(2)
-        # a_conj_b = a * np.conj(b)
-        # b_conj_a = b * np.conj(a)
-        # theoretical_val = 1j * b_conj_a * np.exp(-2j * phi) - 1j * a_conj_b * np.exp(2j * phi)
-        # theoretical_grad = 1j * b_conj_a * np.exp(-2j * phi) * (-2j) - 1j * a_conj_b * np.exp(2j * phi) * 2j
-        # print(theoretical_val)
-        # print(np.isclose(theoretical_val, val_GPI))
-        # print(theoretical_grad)
-        # print(np.isclose(theoretical_grad, grad_GPI))
+    @pytest.mark.parametrize("diff_method", diff_methods)
+    def test_GPI_grad(self, diff_method, interface): 
         phi = np.random.rand() * two_pi
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
-        qnode_GPI = qml.QNode(self.circuit, dev, interface=interface)
-        qnode_unitary = qml.QNode(self.circuit_unitary, dev)
+        backprop_devices = dev.capabilities().get("passthru_devices", None)
+        if (diff_method=="backprop" and interface not in (list(backprop_devices.keys())+["auto"])) or (diff_method=="device"):
+            with pytest.raises(qml.QuantumFunctionError):
+                qml.QNode(self.circuit, dev, interface=interface, diff_method=diff_method)
+            return
 
-        grad_unitary = qml.grad(qnode_unitary, argnum=0)(phi)
+        qnode_GPI = qml.QNode(self.circuit, dev, interface=interface, diff_method=diff_method)
 
         match interface:
             case "torch":
@@ -122,4 +131,20 @@ class TestGPI:
 
             case _:
                 grad_GPI = qml.grad(qnode_GPI, argnum=0)(phi_GPI)
-        assert np.isclose(grad_GPI, grad_unitary)
+        
+        expected_inner_product_1 = 1j * self._state.b_conj_a * np.exp(-2j * phi) * (-2j)
+        expected_inner_product_2 = - 1j * self._state.a_conj_b * np.exp(2j * phi) * 2j
+        expected_grad =  expected_inner_product_1 + expected_inner_product_2
+
+        atol = 1e-7
+        assert np.isclose(grad_GPI, expected_grad, atol=atol), f"Given grad: {grad_GPI}; Expected grad: {expected_grad}"
+
+        """TODO issues:
+                            device - not computing jacobian -TEST RX        (correct)
+                            backprop - doesn't work with none               (correct)
+        adjoint - not working unless None, -TEST RX     
+        parameter-shift - not working unless None
+        hadamard - not working unless None, -TEST RX
+        spsa - torch is too far off
+        None - not working -Test RX
+        """
