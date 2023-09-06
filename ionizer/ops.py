@@ -48,6 +48,7 @@ class GPI(Operation):
     ndim_params = (0,)
     grad_method = "A"
     parameter_frequencies = [(1,)]
+    grad_recipe = ([[1, 1, np.pi / 4], [-1, 1, -np.pi / 4]],)
 
     def generator(self):
         """Generator for GPI"""
