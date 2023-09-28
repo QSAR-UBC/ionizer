@@ -18,7 +18,7 @@
 Native gates for IonQ hardware as PennyLane operations.
 """
 import functools
-
+import inspect
 import numpy as np
 
 import pennylane as qml
@@ -50,15 +50,47 @@ class GPI(Operation):
     parameter_frequencies = [(1,)]
     grad_recipe = ([[1, 1, np.pi / 4], [-1, 1, -np.pi / 4]],)
 
-    def generator(self):
-        """Generator for GPI"""
-        phi = self.data[0]
-        c = (np.pi / 2)/phi
-        coeffs = [c, -c * qml.math.cos(phi), -c * qml.math.sin(phi)]
-        observables = [qml.Identity(wires=self.wires), qml.PauliX(wires=self.wires), qml.PauliY(wires=self.wires)]
+    def generator(self, is_adjoint_call=True):
+        r"""Observable that fixes adjoint derivative, NOT GENERATOR 
+        Generator for GPI should be: 
+        .. math::\hat(G) = \frac{\pi}{2}\begin{bmatrix}
+                1 & e^{i\phi} \\
+                e^{-i\phi} & 1
+              \end{bmatrix} = -\frac{\pi}{2}(I-cos(\phi)X-sin(\phi)Y).
+
+        However for adjoint differentiation we muse use:
+        .. math::\frac{\partial U}{\partial\phi}=ic\hat{G}U.
         
+        For GPI the derivative is simply
+        .. math::\frac{\partial GPI}{\partial\phi} = \begin{bmatrix}
+                0 & ie^{i\phi} \\
+                -ie^{-i\phi} & 0
+              \end{bmatrix} = -i*Z*GPI.
+        
+        Return:
+        tensor_like: .. math::-Z/c.
+        """
+        if is_adjoint_call:
+            return -qml.PauliZ(wires=self.wires)
+        return self.generator_actual()
+
+    def generator_true(self):
+        r"""Actually the true Generator for GPI       
+        .. math::\hat(G) = \frac{\pi}{2}\begin{bmatrix}
+                1 & e^{i\phi} \\
+                e^{-i\phi} & 
+              \end{bmatrix} = -\frac{\pi}{2}(I-cos(\phi)X-sin(\phi)Y).
+        """
+        phi = self.data[0]
+        c = (np.pi / 2) / phi
+        coeffs = np.array([c, -c * qml.math.cos(phi), -c * qml.math.sin(phi)])
+        observables = [
+            qml.Identity(wires=self.wires),
+            qml.PauliX(wires=self.wires),
+            qml.PauliY(wires=self.wires),
+        ]
+
         return qml.Hamiltonian(coeffs, observables)
-        #return c*qml.Identity(wires=self.wires) - c * qml.math.cos(self.data[0]) * qml.PauliX(wires=self.wires) - c * qml.math.sin(self.data[0]) * qml.PauliY(wires=self.wires)
 
     def __init__(self, phi, wires, id=None):
         super().__init__(phi, wires=wires, id=id)
@@ -91,6 +123,24 @@ class GPI(Operation):
     def adjoint(self):
         # The GPI gate is its own adjoint.
         return GPI(self.data[0], self.wires)
+
+    def operation_derivative(self):
+        r"""
+        Returns:
+            tensor_like: The derivative of the single-qubit GPI rotation
+
+        .. math:: GPI(\phi) = \begin{bmatrix}
+                0 & -ie^{-i\phi} \\
+                ie^{i\phi} & 0
+              \end{bmatrix}.
+        """
+        phi = self.data[0]
+
+        a = 0 + 0j
+        b = -1j * qml.math.exp((0 - 1j) * phi)
+        return qml.math.stack(
+            qml.math.stack([stack_last([a, b]), stack_last([qml.math.conj(b), a])])
+        )
 
 
 class GPI2(Operation):
