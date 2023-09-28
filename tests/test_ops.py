@@ -79,8 +79,7 @@ class TestGPI:
             assert math.allclose(gpi_matrix, check_matrix)
 
     @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_circuit(self, interface):
-        phi = np.random.rand() * two_pi
+    def test_GPI_circuit(self, interface, phi):
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
@@ -97,8 +96,8 @@ class TestGPI:
 
     @pytest.mark.parametrize("interface", interfaces)
     @pytest.mark.parametrize("diff_method", diff_methods)
+    @pytest.mark.parametrize("phi", [0.37*two_pi, 1.23* two_pi, two_pi])
     def test_GPI_grad(self, diff_method, interface):
-        error_tolerance = 1e-7
         phi = np.random.rand() * two_pi
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
@@ -116,10 +115,6 @@ class TestGPI:
                 with tf.GradientTape() as tape:
                     loss = qnode_GPI(phi_GPI)
                 grad_GPI = tape.gradient(loss, phi_GPI)
-
-                if diff_method == "spsa":
-                    error_tolerance = 1e-2
-
             case "jax":
                 grad_GPI = jax.grad(qnode_GPI)(phi_GPI)
 
@@ -130,6 +125,4 @@ class TestGPI:
         expected_inner_product_2 = -1j * self._state.a_conj_b * np.exp(2j * phi) * 2j
         expected_grad = np.real(expected_inner_product_1 + expected_inner_product_2)
 
-        assert np.isclose(
-            grad_GPI, expected_grad, atol=error_tolerance
-        ), f"Given grad: {grad_GPI}; Expected grad: {expected_grad}"
+        assert np.isclose(grad_GPI, expected_grad), f"Given grad: {grad_GPI}; Expected grad: {expected_grad}"
