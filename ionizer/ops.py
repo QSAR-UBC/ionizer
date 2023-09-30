@@ -72,7 +72,7 @@ class GPI(Operation):
         """
         if is_adjoint_call:
             return -qml.PauliZ(wires=self.wires)
-        return self.generator_actual()
+        return self.generator_true()
 
     def generator_true(self):
         r"""Actually the true Generator for GPI       
