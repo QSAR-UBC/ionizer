@@ -92,9 +92,6 @@ class TestExtractGPIGPI2Angles:
     def test_extract_gpi_gpi2_angles(self, U):
         """Test that extracting GPI/GPI2 angles yields the correct operation."""
         gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(U)
-        print(gamma)
-        print(beta)
-        print(alpha)
 
         with qml.tape.QuantumTape() as tape:
             GPI2(gamma, wires=0)
