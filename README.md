@@ -26,7 +26,7 @@ def circuit(x):
 ## Installation
 
 Requirements:
- * PennyLane >= 0.29
+ * PennyLane >= 0.33
 
 The Ionizer is not currently available via a package manager. To install, clone the repository and run
 
@@ -39,6 +39,9 @@ or
 ```
 python setup.py install
 ```
+
+If you need to run Ionizer with a version of PennyLane between 0.29 and 0.32,
+please use version 0.1.2 of the package.
 
 ## Examples
 

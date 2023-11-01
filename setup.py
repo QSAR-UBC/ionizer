@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages, find_namespace_packages
 
 requirements = [
-    "pennylane>=0.32",
+    "pennylane>=0.33",
 ]
 
 setup(
     name="Ionizer",
-    version="0.1.2",
+    version="0.2",
     description="PennyLane tools for compilation into trapped-ion native gates.",
     author="UBC Quantum Software and Algorithms Research Group",
     url="https://github.com/QSAR-UBC/ionizer",
