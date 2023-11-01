@@ -34,13 +34,12 @@ def are_mats_equivalent(mat1, mat2):
     """
     mat_product = math.dot(mat1, math.conj(math.T(mat2)))
 
-    if math.isclose(mat_product[0, 0], 0.0):
-        mat_product = mat_product / mat_product[0, 1]
-    else:
+    # If the top-left entry is not 0, divide everything by it and test against identity
+    if not math.isclose(mat_product[0, 0], 0.0):
         mat_product = mat_product / mat_product[0, 0]
 
-    if math.allclose(mat_product, math.eye(mat_product.shape[0])):
-        return True
+        if math.allclose(mat_product, math.eye(mat_product.shape[0])):
+            return True
 
     return False
 
@@ -90,8 +89,11 @@ def extract_gpi2_gpi_gpi2_angles(U):
     phase_00 = math.angle(su2_mat[0, 0])
     phase_10 = math.angle(su2_mat[1, 0])
 
+    # Extract the angles; note that we clip the input to the arccos because due
+    # to finite precision, the number may be slightly greater than 1 when their
+    # input matrix element is 0, which would throw an error
     alpha = phase_10 - phase_00 + np.pi
-    beta = math.arccos(math.abs(su2_mat[0, 0])) + phase_10 + np.pi
+    beta = math.arccos(math.clip(math.abs(su2_mat[0, 0]), 0, 1)) + phase_10 + np.pi
     gamma = phase_10 + phase_00 + np.pi
 
     return rescale_angles([gamma, beta, alpha])
