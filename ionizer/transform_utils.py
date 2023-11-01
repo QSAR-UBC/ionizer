@@ -54,6 +54,10 @@ def search_and_apply_three_gate_identities(gates_to_apply):
     Args:
         gates_to_apply (List[pennylane.Operation]): A sequence of three gates
              we would like to simplify.
+
+    Returns:
+        List[pennylane.Operation]: The simplified or alternate gate sequence that
+        will be applied within the transform.
     """
     if len(gates_to_apply) != 3:
         raise ValueError(
