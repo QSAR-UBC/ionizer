@@ -56,6 +56,11 @@ def commute_through_ms_gates(
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
         direction (str): Which direction to push the commuting gates in.
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
+        function]: The transformed circuit as described in :func:`qml.transform
+        <pennylane.transform>`.
     """
     if direction not in ["left", "right"]:
         raise ValueError(
@@ -113,7 +118,7 @@ def commute_through_ms_gates(
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     def null_postprocessing(results):
-        """A postprocesing function returned by a transform that only converts the batch of results
+        """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
         """
         return results[0]
@@ -136,6 +141,11 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
+        function]: The transformed circuit as described in :func:`qml.transform
+        <pennylane.transform>`.
     """
     list_copy = tape.operations.copy()
     new_operations = []
@@ -211,7 +221,7 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     def null_postprocessing(results):
-        """A postprocesing function returned by a transform that only converts the batch of results
+        """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
         """
         return results[0]
@@ -229,6 +239,11 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
+        function]: The transformed circuit as described in :func:`qml.transform
+        <pennylane.transform>`.
     """
     # Make a working copy of the list to traverse
     list_copy = tape.operations.copy()
@@ -300,7 +315,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     def null_postprocessing(results):
-        """A postprocesing function returned by a transform that only converts the batch of results
+        """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
         """
         return results[0]
@@ -319,6 +334,11 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=[]) -> (Sequence[QuantumTape]
         tape (pennylane.QuantumTape): A quantum tape to transform.
         exclude_list (list[str]): A list of names of gates to exclude from
             conversion (see the ionize transform for an example).
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
+        function]: The transformed circuit as described in :func:`qml.transform
+        <pennylane.transform>`.
     """
     new_operations = []
 
@@ -335,7 +355,7 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=[]) -> (Sequence[QuantumTape]
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     def null_postprocessing(results):
-        """A postprocesing function returned by a transform that only converts the batch of results
+        """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
         """
         return results[0]
@@ -358,6 +378,11 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
+        function]: The transformed circuit as described in :func:`qml.transform
+        <pennylane.transform>`.
     """
 
     # The tape will first be expanded into known operations
@@ -383,7 +408,7 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     new_tape = type(tape)(optimized_tape[0].operations, tape.measurements, shots=tape.shots)
 
     def null_postprocessing(results):
-        """A postprocesing function returned by a transform that only converts the batch of results
+        """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
         """
         return results[0]
