@@ -130,3 +130,20 @@ fairly large circuits, we still need to work on:
 
  * [IonQ documentation](https://ionq.com/docs/getting-started-with-native-gates)
  * [Basic circuit compilation techniques for an ion-trap quantum machine](https://arxiv.org/abs/1603.07678)
+   
+ ## Citing
+
+ If you use the Ionizer as part of your workflow, we would appreciate if you cite it using the BibTeX below.
+
+```
+@software{di_matteo_2024_10761367,
+  author       = {Di Matteo, Olivia},
+  title        = {The Ionizer},
+  month        = mar,
+  year         = 2024,
+  publisher    = {Zenodo},
+  version      = {0.2},
+  doi          = {10.5281/zenodo.10761367},
+  url          = {https://doi.org/10.5281/zenodo.10761367}
+}
+```
