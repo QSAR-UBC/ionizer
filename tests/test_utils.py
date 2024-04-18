@@ -1,6 +1,7 @@
 """
 Test utility functions.
 """
+
 import pytest
 
 import numpy as np
