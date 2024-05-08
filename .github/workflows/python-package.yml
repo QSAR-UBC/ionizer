@@ -33,6 +33,11 @@ jobs:
     - name: Format with black
       run: |
         black -l 100 ionizer/*.py tests/*.py
+    - name: Add & Commit
+      uses: EndBug/add-and-commit@v9.1.4
+      with:
+        add: "ionizer/*.py tests/*.py"
+        message: "Auto-format with black"
     - name: Test with pytest
       run: |
         pytest tests/test_*.py
