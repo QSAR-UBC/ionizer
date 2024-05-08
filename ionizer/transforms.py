@@ -324,7 +324,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 
 @qml.transform
-def convert_to_gpi(tape: QuantumTape, exclude_list=[]) -> (Sequence[QuantumTape], Callable):
+def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
     """Transpile a tape directly to native trapped ion gates.
 
     Any operation without a decomposition in decompositions.py will remain
@@ -340,6 +340,9 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=[]) -> (Sequence[QuantumTape]
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
     """
+    if exclude_list is None:
+        exclude_list = []
+
     new_operations = []
 
     with qml.QueuingManager.stop_recording():
