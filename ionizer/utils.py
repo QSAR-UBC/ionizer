@@ -21,18 +21,18 @@ import numpy as np
 from pennylane import math
 
 
-def are_mats_equivalent(mat1, mat2):
+def are_mats_equivalent(unitary1, unitary2):
     """Checks the equivalence of two unitary matrices.
 
      Args:
-        mat1 (tensor): First unitary matrix.
-        mat2 (tensor): Second unitary matrix.
+        unitary1 (tensor): First unitary matrix.
+        unitary2 (tensor): Second unitary matrix.
 
     Returns:
         bool: True if the two matrices are equivalent up to a global phase,
         False otherwise.
     """
-    mat_product = math.dot(mat1, math.conj(math.T(mat2)))
+    mat_product = math.dot(unitary1, math.conj(math.T(unitary2)))
 
     # If the top-left entry is not 0, divide everything by it and test against identity
     if not math.isclose(mat_product[0, 0], 0.0):
@@ -65,7 +65,7 @@ def rescale_angles(angles, renormalize_for_json=False):
     return rescaled_angles
 
 
-def extract_gpi2_gpi_gpi2_angles(U):
+def extract_gpi2_gpi_gpi2_angles(unitary):
     r"""Given a matrix U, recovers a set of three angles alpha, beta, and
     gamma such that
         U = GPI2(alpha) GPI(beta) GPI2(gamma)
@@ -76,15 +76,15 @@ def extract_gpi2_gpi_gpi2_angles(U):
     https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.zyz_decomposition.html
 
     Args:
-        U (tensor): A unitary matrix.
+        unitary (tensor): A unitary matrix.
 
     Returns:
         tensor: Rotation angles for the GPI/GPI2 gates. The order of the
         returned angles corresponds to the order in which they would be
         implemented in the circuit.
     """
-    det = math.angle(math.linalg.det(U))
-    su2_mat = math.exp(-1j * det / 2) * U
+    det = math.angle(math.linalg.det(unitary))
+    su2_mat = math.exp(-1j * det / 2) * unitary
 
     phase_00 = math.angle(su2_mat[0, 0])
     phase_10 = math.angle(su2_mat[1, 0])

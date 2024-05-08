@@ -18,6 +18,136 @@ DOUBLE_IDENTITY_FILE = files("ionizer.resources").joinpath("double_gate_identiti
 TRIPLE_IDENTITY_FILE = files("ionizer.resources").joinpath("triple_gate_identities.pkl")
 
 
+def generate_double_gate_identities(single_gates, id_angles):
+    """Generates all 2-gate identities involving GPI/GPI2 and special angles.
+
+    Args:
+        single_gates (Dict[str, List[Tuple(float, tensor)]]): Dictionary containing
+            which gates to generate identities from, along with list of special
+            cases of angles/matrices to use in identity generation.
+        id_angles (List[float]): Special values of angles used in identity generation.
+
+    Returns:
+        Dict[str, Tuple([float, float], str, float)]: Dictionary of identities
+        where the key is a concatenated string of gates, and the value contains
+        the angles involved in the identity, the resultant gate, and its argument.
+
+    Example:
+        An entry in the return dictionary under the key 'GPIGPI2' may have the form
+
+            [0.7853981633974483, -2.356194490192345], 'GPI2', [0.7853981633974483]
+
+        This indicates that the product of GPI(0.785398) GPI2(-2.356194) is a GPI2
+        gate with parameter 0.78539.
+    """
+
+    double_gate_identities = {}
+
+    # Check which combinations of 2 gates reduces to a single one
+    for gate_1, gate_2 in product([GPI, GPI2], repeat=2):
+        combo_name = gate_1.__name__ + gate_2.__name__
+
+        for angle_1, angle_2 in product(id_angles, repeat=2):
+            matrix = math.dot(gate_1.compute_matrix(angle_1), gate_2.compute_matrix(angle_2))
+
+            # Test in case we produced the identity;
+            if not math.isclose(matrix[0, 0], 0.0):
+                if math.allclose(matrix / matrix[0, 0], math.eye(2)):
+                    if combo_name not in double_gate_identities:
+                        double_gate_identities[combo_name] = []
+                    double_gate_identities[combo_name].append(([angle_1, angle_2], "Identity", 0.0))
+                    continue
+
+            for id_gate, gate_angle_list in single_gates.items():
+                angles, matrices = [x[0] for x in gate_angle_list], [x[1] for x in gate_angle_list]
+
+                for ref_angle, ref_matrix in zip(angles, matrices):
+                    if are_mats_equivalent(matrix, ref_matrix):
+                        if combo_name not in double_gate_identities:
+                            double_gate_identities[combo_name] = []
+
+                        if not any(
+                            np.allclose([angle_1, angle_2], database_angles)
+                            for database_angles in [
+                                identity[0] for identity in double_gate_identities[combo_name]
+                            ]
+                        ):
+                            double_gate_identities[combo_name].append(
+                                ([angle_1, angle_2], id_gate, ref_angle)
+                            )
+
+    return double_gate_identities
+
+
+def generate_triple_gate_identities(single_gates, id_angles):
+    """Generates all 3-gate identities involving GPI/GPI2 and special angles.
+
+    Args:
+        single_gates (Dict[str, List[Tuple(float, tensor)]]): Dictionary containing
+            which gates to generate identities from, along with list of special
+            cases of angles/matrices to use in identity generation.
+        id_angles (List[float]): Special values of angles used in identity generation.
+
+    Returns:
+        Dict[str, Tuple([float, float, float], str, float)]: Dictionary of identities
+        where the key is a concatenated string of gates, and the value contains
+        the angles involved in the identity, the resultant gate, and its argument.
+
+    Example:
+        An entry in the return dictionary under the key 'GPIGPIGPI' may have the form
+
+            [3.141592653589793, 3.141592653589793, 0.0], 'GPI', [-3.141592653589793]
+
+        This indicates that the product GPI(3.14) GPI(3.14) GPI(0) is a GPI
+        gate with parameter -3.14.
+    """
+
+    triple_gate_identities = {}
+
+    # Check which combinations of 3 gates reduces to a single one
+    for gate_1, gate_2, gate_3 in product([GPI, GPI2], repeat=3):
+        combo_name = gate_1.__name__ + gate_2.__name__ + gate_3.__name__
+
+        for angle_1, angle_2, angle_3 in product(id_angles, repeat=3):
+            matrix = math.linalg.multi_dot(
+                [
+                    gate_1.compute_matrix(angle_1),
+                    gate_2.compute_matrix(angle_2),
+                    gate_3.compute_matrix(angle_3),
+                ]
+            )
+
+            # Test in case we produced the identity;
+            if not math.isclose(matrix[0, 0], 0.0):
+                if math.allclose(matrix / matrix[0, 0], math.eye(2)):
+                    if combo_name not in triple_gate_identities:
+                        triple_gate_identities[combo_name] = []
+                    triple_gate_identities[combo_name].append(
+                        ([angle_1, angle_2, angle_3], "Identity", 0.0)
+                    )
+                    continue
+
+            for id_gate, gate_angle_list in single_gates.items():
+                angles, matrices = [x[0] for x in gate_angle_list], [x[1] for x in gate_angle_list]
+
+                for ref_angle, ref_matrix in zip(angles, matrices):
+                    if are_mats_equivalent(matrix, ref_matrix):
+                        if combo_name not in triple_gate_identities:
+                            triple_gate_identities[combo_name] = []
+
+                        if not any(
+                            np.allclose([angle_1, angle_2, angle_3], database_angles)
+                            for database_angles in [
+                                identity[0] for identity in triple_gate_identities[combo_name]
+                            ]
+                        ):
+                            triple_gate_identities[combo_name].append(
+                                ([angle_1, angle_2, angle_3], id_gate, ref_angle)
+                            )
+
+    return triple_gate_identities
+
+
 def generate_gate_identities():
     """Generates all 2- and 3-gate identities involving GPI/GPI2 and special angles.
 
@@ -41,90 +171,11 @@ def generate_gate_identities():
         "GPI2": [([angle], GPI2.compute_matrix(angle)) for angle in id_angles],
     }
 
-    double_gate_identities = {}
-
-    # Check which combinations of 2 gates reduces to a single one
-    for gate_1, gate_2 in product([GPI, GPI2], repeat=2):
-        combo_name = gate_1.__name__ + gate_2.__name__
-
-        for angle_1, angle_2 in product(id_angles, repeat=2):
-            matrix = math.dot(gate_1.compute_matrix(angle_1), gate_2.compute_matrix(angle_2))
-
-            # Test in case we produced the identity;
-            if not math.isclose(matrix[0, 0], 0.0):
-                if math.allclose(matrix / matrix[0, 0], math.eye(2)):
-                    if combo_name not in double_gate_identities:
-                        double_gate_identities[combo_name] = []
-                    double_gate_identities[combo_name].append(([angle_1, angle_2], "Identity", 0.0))
-                    continue
-
-            for id_gate in single_gates:
-                angles, matrices = [x[0] for x in single_gates[id_gate]], [
-                    x[1] for x in single_gates[id_gate]
-                ]
-
-                for ref_angle, ref_matrix in zip(angles, matrices):
-                    if are_mats_equivalent(matrix, ref_matrix):
-                        if combo_name not in double_gate_identities:
-                            double_gate_identities[combo_name] = []
-
-                        if not any(
-                            np.allclose([angle_1, angle_2], database_angles)
-                            for database_angles in [
-                                identity[0] for identity in double_gate_identities[combo_name]
-                            ]
-                        ):
-                            double_gate_identities[combo_name].append(
-                                ([angle_1, angle_2], id_gate, ref_angle)
-                            )
+    double_gate_identities = generate_double_gate_identities(single_gates, id_angles)
+    triple_gate_identities = generate_triple_gate_identities(single_gates, id_angles)
 
     with DOUBLE_IDENTITY_FILE.open("wb") as outfile:
         pickle.dump(double_gate_identities, outfile)
-
-    triple_gate_identities = {}
-
-    # Check which combinations of 2 gates reduces to a single one
-    for gate_1, gate_2, gate_3 in product([GPI, GPI2], repeat=3):
-        combo_name = gate_1.__name__ + gate_2.__name__ + gate_3.__name__
-
-        for angle_1, angle_2, angle_3 in product(id_angles, repeat=3):
-            matrix = math.linalg.multi_dot(
-                [
-                    gate_1.compute_matrix(angle_1),
-                    gate_2.compute_matrix(angle_2),
-                    gate_3.compute_matrix(angle_3),
-                ]
-            )
-
-            # Test in case we produced the identity;
-            if not math.isclose(matrix[0, 0], 0.0):
-                if math.allclose(matrix / matrix[0, 0], math.eye(2)):
-                    if combo_name not in triple_gate_identities:
-                        triple_gate_identities[combo_name] = []
-                    triple_gate_identities[combo_name].append(
-                        ([angle_1, angle_2, angle_3], "Identity", 0.0)
-                    )
-                    continue
-
-            for id_gate in single_gates:
-                angles, matrices = [x[0] for x in single_gates[id_gate]], [
-                    x[1] for x in single_gates[id_gate]
-                ]
-
-                for ref_angle, ref_matrix in zip(angles, matrices):
-                    if are_mats_equivalent(matrix, ref_matrix):
-                        if combo_name not in triple_gate_identities:
-                            triple_gate_identities[combo_name] = []
-
-                        if not any(
-                            np.allclose([angle_1, angle_2, angle_3], database_angles)
-                            for database_angles in [
-                                identity[0] for identity in triple_gate_identities[combo_name]
-                            ]
-                        ):
-                            triple_gate_identities[combo_name].append(
-                                ([angle_1, angle_2, angle_3], id_gate, ref_angle)
-                            )
 
     with TRIPLE_IDENTITY_FILE.open("wb") as outfile:
         pickle.dump(triple_gate_identities, outfile)

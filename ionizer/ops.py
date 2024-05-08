@@ -44,7 +44,9 @@ class GPI(Operation):
     num_params = 1
     ndim_params = (0,)
 
-    def __init__(self, phi, wires, id=None):
+    # Note: disable pylint complaint about redefined built-in, since the id
+    # value itself is coming from the class definition of Operators in PennyLane proper.
+    def __init__(self, phi, wires, id=None):  # pylint: disable=redefined-builtin
         super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
@@ -91,7 +93,7 @@ class GPI2(Operation):
     num_params = 1
     ndim_params = (0,)
 
-    def __init__(self, phi, wires, id=None):
+    def __init__(self, phi, wires, id=None):  # pylint: disable=redefined-builtin
         super().__init__(phi, wires=wires, id=id)
 
     @staticmethod
@@ -143,7 +145,7 @@ class MS(Operation):
     num_wires = 2
     num_params = 0
 
-    def __init__(self, wires, id=None):
+    def __init__(self, wires, id=None):  # pylint: disable=redefined-builtin
         super().__init__(wires=wires, id=id)
 
     @staticmethod

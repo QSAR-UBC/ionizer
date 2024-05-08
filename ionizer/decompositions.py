@@ -153,14 +153,14 @@ def gpi_rz(phi, wires):
     return [GPI(-phi / 2, wires=wires), GPI(0.0, wires=wires)]
 
 
-def gpi_single_qubit_unitary(U, wires):
+def gpi_single_qubit_unitary(unitary, wires):
     """Single-qubit unitary matrix decomposition into GPI/GPI2 gates.
 
     This function is modeled off of PennyLane's unitary_to_rot transform:
     https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.unitary_to_rot.html
 
     Args:
-        U (tensor): A unitary matrix.
+        unitary (tensor): A unitary matrix.
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
@@ -168,26 +168,26 @@ def gpi_single_qubit_unitary(U, wires):
         the desired unitary up to a global phase.
     """
     # Check in case we have the identity
-    if math.allclose(U, math.eye(2)):
+    if math.allclose(unitary, math.eye(2)):
         return []
 
     # Special case: if we have off-diagonal elements this is a single GPI
-    if math.isclose(U[0, 0], 0.0):
-        angle = math.angle(U[1, 0])
+    if math.isclose(unitary[0, 0], 0.0):
+        angle = math.angle(unitary[1, 0])
         return [GPI(angle, wires=wires)]
 
     # Special case: if we have off-diagonal 0s but it is not the identity,
     # this is an RZ which is a sequence of two GPIs.
-    if math.allclose([U[0, 1], U[1, 0]], [0.0, 0.0]):
-        return gpi_rz(2 * math.angle(U[1, 1]), wires)
+    if math.allclose([unitary[0, 1], unitary[1, 0]], [0.0, 0.0]):
+        return gpi_rz(2 * math.angle(unitary[1, 1]), wires)
 
     # Special case: if both diagonal elements are 1/sqrt(2), this is a GPI2
-    if math.allclose([U[0, 0], U[1, 1]], [1 / np.sqrt(2), 1 / np.sqrt(2)]):
-        angle = math.angle(U[1, 0]) + np.pi / 2
+    if math.allclose([unitary[0, 0], unitary[1, 1]], [1 / np.sqrt(2), 1 / np.sqrt(2)]):
+        angle = math.angle(unitary[1, 0]) + np.pi / 2
         return [GPI2(angle, wires=wires)]
 
     # In the general case we must compute and return all three angles.
-    gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(U)
+    gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(unitary)
 
     return [GPI2(gamma, wires=wires), GPI(beta, wires=wires), GPI2(alpha, wires=wires)]
 

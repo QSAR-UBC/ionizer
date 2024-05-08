@@ -2,8 +2,9 @@
 Test the suite of transpilation transforms. 
 """
 
-import pytest
 from functools import partial
+
+import pytest
 
 import pennylane as qml
 from pennylane import math
