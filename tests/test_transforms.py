@@ -1,6 +1,7 @@
 """
 Test the suite of transpilation transforms. 
 """
+
 import pytest
 from functools import partial
 
@@ -82,7 +83,10 @@ class TestCommuteThroughMSGates:
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
         assert _compare_tape_contents(transformed_tape, expected_tape)
-        assert are_mats_equivalent(qml.matrix(transformed_tape), qml.matrix(expected_tape))
+        assert are_mats_equivalent(
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
+            qml.matrix(expected_tape, wire_order=[0, 1]),
+        )
 
     def test_commutation_one_qubit(self):
         """Test case where gates on one of the qubits commutes."""
@@ -104,7 +108,10 @@ class TestCommuteThroughMSGates:
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
         assert _compare_tape_contents(transformed_tape, expected_tape)
-        assert are_mats_equivalent(qml.matrix(transformed_tape), qml.matrix(expected_tape))
+        assert are_mats_equivalent(
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
+            qml.matrix(expected_tape, wire_order=[0, 1]),
+        )
 
         def qfunc():
             MS(wires=[0, 1])
@@ -123,7 +130,10 @@ class TestCommuteThroughMSGates:
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
         assert _compare_tape_contents(transformed_tape, expected_tape)
-        assert are_mats_equivalent(qml.matrix(transformed_tape), qml.matrix(expected_tape))
+        assert are_mats_equivalent(
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
+            qml.matrix(expected_tape, wire_order=[0, 1]),
+        )
 
     def test_commutation_one_qubit_multiple_ms(self):
         """Test case where gates on one of the qubits commutes through multiple MS gates."""
@@ -145,7 +155,10 @@ class TestCommuteThroughMSGates:
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
         assert _compare_tape_contents(transformed_tape, expected_tape)
-        assert are_mats_equivalent(qml.matrix(transformed_tape), qml.matrix(expected_tape))
+        assert are_mats_equivalent(
+            qml.matrix(transformed_tape, wire_order=range(3)),
+            qml.matrix(expected_tape, wire_order=range(3)),
+        )
 
     def test_commutation_two_qubits_multiple_ms(self):
         """Test case where gates on one of the qubits commutes."""
@@ -169,7 +182,10 @@ class TestCommuteThroughMSGates:
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
         assert _compare_tape_contents(transformed_tape, expected_tape)
-        assert are_mats_equivalent(qml.matrix(transformed_tape), qml.matrix(expected_tape))
+        assert are_mats_equivalent(
+            qml.matrix(transformed_tape, wire_order=range(3)),
+            qml.matrix(expected_tape, wire_order=range(3)),
+        )
 
     def test_commutation_two_qubits_multiple_ms_left(self):
         """Test case where gates on one of the qubits commutes in leftward direction."""
@@ -211,7 +227,9 @@ class TestVirtualizeRZGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert len(transformed_tape.operations) == 1
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=[0]), qml.matrix(transformed_tape, wire_order=[0])
+        )
 
     def test_rz_gpi2(self):
         """Test that RZ is correctly pushed through a GPI2 gate."""
@@ -229,7 +247,9 @@ class TestVirtualizeRZGates:
         assert all(
             op.name == name for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI"])
         )
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=[0]), qml.matrix(transformed_tape, wire_order=[0])
+        )
 
     def test_rz_gpi_ms(self):
         """Test that non-GPI gates stop RZ from going through."""
@@ -249,7 +269,9 @@ class TestVirtualizeRZGates:
             op.name == name
             for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI", "MS"])
         )
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+        )
 
     def test_rz_gpi_multiqubit(self):
         """Test that RZ gates are virtualized on multiple qubits."""
@@ -270,7 +292,9 @@ class TestVirtualizeRZGates:
             op.name == name
             for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI", "GPI"])
         )
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+        )
 
     def test_rz_gpi_multiqubit_multims(self):
         """Test that RZ gates are virtualized on multiple qubits with gates in between."""
@@ -295,7 +319,9 @@ class TestVirtualizeRZGates:
                 transformed_tape.operations, ["GPI2", "GPI", "GPI", "MS", "GPI", "MS"]
             )
         )
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+        )
 
 
 class TestSingleQubitGPIFusion:
@@ -319,7 +345,9 @@ class TestSingleQubitGPIFusion:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert _compare_tape_contents(tape, transformed_tape)
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+        )
 
     def test_no_fusion_multiple_gates(self):
         """Test that if there are no gates to fuse that nothing happens, even
@@ -341,7 +369,9 @@ class TestSingleQubitGPIFusion:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert _compare_tape_contents(tape, transformed_tape)
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+        )
 
     def test_fusion_three_gates(self):
         """Test that if a GPI2/GPI/GPI2 sequence already exists that we don't fuse."""
@@ -363,7 +393,9 @@ class TestSingleQubitGPIFusion:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert _compare_tape_contents(tape, transformed_tape)
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+        )
 
     def test_fusion_four_gates(self):
         """Test that more than three gates get properly fused."""
@@ -389,7 +421,9 @@ class TestSingleQubitGPIFusion:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert len(transformed_tape.operations) == len(tape.operations) - 2
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+        )
 
 
 class TestConvertToGPI:
@@ -410,7 +444,9 @@ class TestConvertToGPI:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in transformed_tape.operations)
-        assert are_mats_equivalent(qml.matrix(tape), qml.matrix(transformed_tape))
+        assert are_mats_equivalent(
+            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+        )
 
     def test_convert_tape_to_gpi_known_gates_exclusion(self):
         """Test that known gates are correctly converted to GPI gates and
