@@ -39,6 +39,7 @@ class GPI(Operation):
             immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
+
     num_wires = 1
     num_params = 1
     ndim_params = (0,)
@@ -138,6 +139,7 @@ class MS(Operation):
             immediately pushed into the Operator queue (optional)
         id (str or None): String representing the operation (optional)
     """
+
     num_wires = 2
     num_params = 0
 
