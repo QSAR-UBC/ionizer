@@ -2,6 +2,7 @@
 Submodule to generate and store a database of circuit identities involving
 up to 3 GPI/GPI2 gates.
 """
+
 from importlib.resources import files
 
 from itertools import product

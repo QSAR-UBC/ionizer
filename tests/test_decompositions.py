@@ -79,7 +79,9 @@ class TestDecompositions:
     def test_non_parametric_decompositions(self, gate, decomp_function):
         """Test decompositions of non-parametric operations."""
         expected_mat = gate.compute_matrix()
-        obtained_mat = qml.matrix(decomp_function)(wires=range(gate.num_wires))
+        obtained_mat = qml.matrix(decomp_function, wire_order=range(gate.num_wires))(
+            wires=range(gate.num_wires)
+        )
         mat_product = qml.math.dot(expected_mat, qml.math.conj(qml.math.T(obtained_mat)))
         mat_product = mat_product / mat_product[0, 0]
         assert qml.math.allclose(mat_product, qml.math.eye(mat_product.shape[0]))
@@ -91,7 +93,9 @@ class TestDecompositions:
     def test_parametric_decompositions(self, gate, decomp_function, angle):
         """Test decompositions of parametric operations."""
         expected_mat = gate.compute_matrix(angle)
-        obtained_mat = qml.matrix(decomp_function)(angle, wires=range(gate.num_wires))
+        obtained_mat = qml.matrix(decomp_function, wire_order=range(gate.num_wires))(
+            angle, wires=range(gate.num_wires)
+        )
         mat_product = qml.math.dot(expected_mat, qml.math.conj(qml.math.T(obtained_mat)))
         mat_product = mat_product / mat_product[0, 0]
         assert qml.math.allclose(mat_product, qml.math.eye(mat_product.shape[0]))
@@ -110,7 +114,7 @@ class TestDecompositions:
                 for op in obtained_decomp_list:
                     qml.apply(op)
 
-            obtained_matrix = qml.matrix(tape)
+            obtained_matrix = qml.matrix(tape, wire_order=tape.wires)
             mat_product = math.dot(obtained_matrix, math.conj(math.T(U)))
             mat_product = mat_product / mat_product[0, 0]
             assert math.allclose(mat_product, math.eye(2))
