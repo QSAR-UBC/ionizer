@@ -305,11 +305,11 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
                     continue
 
                 # Construct the three new operations to apply
-                first_gate = GPI2(gamma, wires=current_gate.wires)
-                second_gate = GPI(beta, wires=current_gate.wires)
-                third_gate = GPI2(alpha, wires=current_gate.wires)
-
-                gates_to_apply = [first_gate, second_gate, third_gate]
+                gates_to_apply = [
+                    GPI2(gamma, wires=current_gate.wires),
+                    GPI(beta, wires=current_gate.wires),
+                    GPI2(alpha, wires=current_gate.wires),
+                ]
                 new_operations.extend(search_and_apply_three_gate_identities(gates_to_apply))
 
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
@@ -344,7 +344,7 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=[]) -> (Sequence[QuantumTape]
 
     with qml.QueuingManager.stop_recording():
         for op in tape.operations:
-            if op.name not in exclude_list and op.name in decomp_map.keys():
+            if op.name not in exclude_list and op.name in decomp_map:
                 if op.num_params > 0:
                     new_operations.extend(decomp_map[op.name](*op.data, op.wires))
                 else:
@@ -387,7 +387,7 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     # The tape will first be expanded into known operations
     def stop_at(op):
-        return op.name in list(decomp_map.keys())
+        return op.name in decomp_map
 
     custom_expand_fn = qml.transforms.create_expand_fn(depth=9, stop_at=stop_at)
 

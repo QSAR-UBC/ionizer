@@ -53,19 +53,19 @@ def generate_gate_identities():
             # Test in case we produced the identity;
             if not math.isclose(matrix[0, 0], 0.0):
                 if math.allclose(matrix / matrix[0, 0], math.eye(2)):
-                    if combo_name not in list(double_gate_identities.keys()):
+                    if combo_name not in double_gate_identities:
                         double_gate_identities[combo_name] = []
                     double_gate_identities[combo_name].append(([angle_1, angle_2], "Identity", 0.0))
                     continue
 
-            for id_gate in list(single_gates.keys()):
+            for id_gate in single_gates:
                 angles, matrices = [x[0] for x in single_gates[id_gate]], [
                     x[1] for x in single_gates[id_gate]
                 ]
 
                 for ref_angle, ref_matrix in zip(angles, matrices):
                     if are_mats_equivalent(matrix, ref_matrix):
-                        if combo_name not in list(double_gate_identities.keys()):
+                        if combo_name not in double_gate_identities:
                             double_gate_identities[combo_name] = []
 
                         if not any(
@@ -99,21 +99,21 @@ def generate_gate_identities():
             # Test in case we produced the identity;
             if not math.isclose(matrix[0, 0], 0.0):
                 if math.allclose(matrix / matrix[0, 0], math.eye(2)):
-                    if combo_name not in list(triple_gate_identities.keys()):
+                    if combo_name not in triple_gate_identities:
                         triple_gate_identities[combo_name] = []
                     triple_gate_identities[combo_name].append(
                         ([angle_1, angle_2, angle_3], "Identity", 0.0)
                     )
                     continue
 
-            for id_gate, _ in single_gates.items():
+            for id_gate in single_gates:
                 angles, matrices = [x[0] for x in single_gates[id_gate]], [
                     x[1] for x in single_gates[id_gate]
                 ]
 
                 for ref_angle, ref_matrix in zip(angles, matrices):
                     if are_mats_equivalent(matrix, ref_matrix):
-                        if combo_name not in list(triple_gate_identities.keys()):
+                        if combo_name not in triple_gate_identities:
                             triple_gate_identities[combo_name] = []
 
                         if not any(
