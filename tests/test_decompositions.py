@@ -100,10 +100,10 @@ class TestDecompositions:
         mat_product = mat_product / mat_product[0, 0]
         assert qml.math.allclose(mat_product, qml.math.eye(mat_product.shape[0]))
 
-    @pytest.mark.parametrize("U, decomp_list", single_qubit_unitaries)
-    def test_single_qubit_unitary_decomposition(self, U, decomp_list):
+    @pytest.mark.parametrize("unitary, decomp_list", single_qubit_unitaries)
+    def test_single_qubit_unitary_decomposition(self, unitary, decomp_list):
         """Test decompositions of single-qubit unitary matrices."""
-        obtained_decomp_list = gpi_single_qubit_unitary(U, [0])
+        obtained_decomp_list = gpi_single_qubit_unitary(unitary, [0])
 
         assert all(
             op.name == expected_name for op, expected_name in zip(obtained_decomp_list, decomp_list)
@@ -115,6 +115,6 @@ class TestDecompositions:
                     qml.apply(op)
 
             obtained_matrix = qml.matrix(tape, wire_order=tape.wires)
-            mat_product = math.dot(obtained_matrix, math.conj(math.T(U)))
+            mat_product = math.dot(obtained_matrix, math.conj(math.T(unitary)))
             mat_product = mat_product / mat_product[0, 0]
             assert math.allclose(mat_product, math.eye(2))

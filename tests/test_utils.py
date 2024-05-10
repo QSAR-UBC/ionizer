@@ -16,11 +16,11 @@ from ionizer.utils import (
     tape_to_json,
 )
 
-from test_decompositions import single_qubit_unitaries
+from test_decompositions import single_qubit_unitaries  # pylint: disable=wrong-import-order
 
 
-class TestMatrixEquivalence:
-    """Test utility function for matrix equivalence checking."""
+class TestMatrixAngleUtilities:
+    """Test utility functions for matrix and angle manipulations."""
 
     @pytest.mark.parametrize(
         "mat1, mat2",
@@ -48,10 +48,6 @@ class TestMatrixEquivalence:
         """Test that we correcty identify matrices that are equivalent
         up to a global phase."""
         assert not are_mats_equivalent(mat1, mat2)
-
-
-class TestRescaleAngles:
-    """Test utility function for rescaling of angles."""
 
     @pytest.mark.parametrize(
         "angles,rescaled_angles",
@@ -85,21 +81,17 @@ class TestRescaleAngles:
         print(obtained_angles)
         assert math.allclose(obtained_angles, rescaled_angles)
 
-
-class TestExtractGPIGPI2Angles:
-    """Test utility function for extraction of GPI/GPI2 angles."""
-
-    @pytest.mark.parametrize("U", [test_case[0] for test_case in single_qubit_unitaries])
-    def test_extract_gpi_gpi2_angles(self, U):
+    @pytest.mark.parametrize("unitary", [test_case[0] for test_case in single_qubit_unitaries])
+    def test_extract_gpi_gpi2_angles(self, unitary):
         """Test that extracting GPI/GPI2 angles yields the correct operation."""
-        gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(U)
+        gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(unitary)
 
         with qml.tape.QuantumTape() as tape:
             GPI2(gamma, wires=0)
             GPI(beta, wires=0)
             GPI2(alpha, wires=0)
 
-        assert are_mats_equivalent(qml.matrix(tape), U)
+        assert are_mats_equivalent(qml.matrix(tape), unitary)
 
 
 class TestConvertToJSON:

@@ -3,7 +3,6 @@ Test the utility functions for the transpilation transforms.
 """
 
 import pytest
-from functools import partial
 
 import pennylane as qml
 from pennylane import math
@@ -15,7 +14,7 @@ from ionizer.transform_utils import (
     search_and_apply_three_gate_identities,
 )
 
-from ionizer.ops import GPI, GPI2, MS
+from ionizer.ops import GPI, GPI2
 
 
 def _compare_op_lists(ops1, ops2):
