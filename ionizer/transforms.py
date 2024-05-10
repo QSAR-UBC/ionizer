@@ -75,7 +75,7 @@ def commute_through_ms_gates(
         list_copy = list_copy[::-1]
 
     with qml.QueuingManager.stop_recording():
-        with qml.tape.QuantumTape() as commuted_tape:
+        with qml.tape.QuantumTape() as _:
             while len(list_copy) > 0:
                 current_gate = list_copy[0]
                 list_copy.pop(0)
