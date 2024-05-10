@@ -30,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install black pytest
+        python -m pip install black pytest pylint
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python -m pip install .
     - name: Format with black
@@ -41,6 +41,11 @@ jobs:
       with:
         add: "ionizer/*.py tests/*.py"
         message: "Auto-format with black"
+    - name: Lint with pylint
+      uses: wearerequired/lint-action@v2
+      with: pylint
+      run: |
+        pylint ionizer/*.py tests/*.py
     - name: Test with pytest
       run: |
         pytest tests/test_*.py
