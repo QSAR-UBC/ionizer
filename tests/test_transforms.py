@@ -2,6 +2,7 @@
 Test the suite of transpilation transforms. 
 """
 
+# pylint: disable=function-redefined
 from functools import partial
 
 import pytest
@@ -20,18 +21,7 @@ from ionizer.transforms import (
 )
 from ionizer.ops import GPI, GPI2, MS
 
-
-def _compare_tape_contents(tape1, tape2):
-    """Test if two tapes are equal."""
-    assert len(tape1.operations) == len(tape2.operations)
-
-    for op1, op2 in zip(tape1.operations, tape2.operations):
-        assert op1.name == op2.name
-        assert op1.num_params == op2.num_params
-        if op1.num_params > 0:
-            assert math.allclose(op1.data, op2.data)
-
-    return True
+from test_transform_utils import _compare_op_lists
 
 
 class TestCommuteThroughMSGates:
@@ -50,7 +40,7 @@ class TestCommuteThroughMSGates:
         transformed_qfunc = commute_through_ms_gates(qfunc)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        assert _compare_tape_contents(tape, transformed_tape)
+        assert _compare_op_lists(tape.operations, transformed_tape.operations)
 
         def qfunc():
             MS(wires=[0, 1])
@@ -62,7 +52,7 @@ class TestCommuteThroughMSGates:
         transformed_qfunc = commute_through_ms_gates(qfunc)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        assert _compare_tape_contents(tape, transformed_tape)
+        assert _compare_op_lists(tape.operations, transformed_tape.operations)
 
     def test_commutation_both_qubits(self):
         """Test that when no gates on either qubits commute, nothing happens."""
@@ -83,7 +73,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape.operations, expected_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(transformed_tape, wire_order=[0, 1]),
             qml.matrix(expected_tape, wire_order=[0, 1]),
@@ -108,7 +98,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape.operations, expected_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(transformed_tape, wire_order=[0, 1]),
             qml.matrix(expected_tape, wire_order=[0, 1]),
@@ -130,7 +120,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape.operations, expected_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(transformed_tape, wire_order=[0, 1]),
             qml.matrix(expected_tape, wire_order=[0, 1]),
@@ -155,7 +145,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape.operations, expected_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(transformed_tape, wire_order=range(3)),
             qml.matrix(expected_tape, wire_order=range(3)),
@@ -182,7 +172,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape.operations, expected_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(transformed_tape, wire_order=range(3)),
             qml.matrix(expected_tape, wire_order=range(3)),
@@ -209,7 +199,7 @@ class TestCommuteThroughMSGates:
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
         expected_tape = qml.tape.make_qscript(expected_qfunc)()
 
-        assert _compare_tape_contents(transformed_tape, expected_tape)
+        assert _compare_op_lists(transformed_tape, expected_tape)
 
 
 class TestVirtualizeRZGates:
@@ -345,7 +335,7 @@ class TestSingleQubitGPIFusion:
         transformed_qfunc = single_qubit_fusion_gpi(qfunc)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        assert _compare_tape_contents(tape, transformed_tape)
+        assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
         )
@@ -369,7 +359,7 @@ class TestSingleQubitGPIFusion:
         transformed_qfunc = single_qubit_fusion_gpi(qfunc)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        assert _compare_tape_contents(tape, transformed_tape)
+        assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
         )
@@ -393,7 +383,7 @@ class TestSingleQubitGPIFusion:
         transformed_qfunc = single_qubit_fusion_gpi(qfunc)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        assert _compare_tape_contents(tape, transformed_tape)
+        assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
         )
