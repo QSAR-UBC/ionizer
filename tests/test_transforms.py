@@ -21,7 +21,7 @@ from ionizer.transforms import (
 )
 from ionizer.ops import GPI, GPI2, MS
 
-from test_transform_utils import _compare_op_lists
+from test_transform_utils import _compare_op_lists  # pylint: disable=wrong-import-order
 
 
 class TestCommuteThroughMSGates:
