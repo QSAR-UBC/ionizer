@@ -16,7 +16,7 @@ from ionizer.utils import (
     tape_to_json,
 )
 
-from test_decompositions import single_qubit_unitaries relative # pylint: disable=wrong-import-order
+from test_decompositions import single_qubit_unitaries  # pylint: disable=wrong-import-order
 
 
 class TestMatrixAngleUtilities:
