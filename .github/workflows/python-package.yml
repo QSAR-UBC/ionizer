@@ -42,8 +42,6 @@ jobs:
         add: "ionizer/*.py tests/*.py"
         message: "Auto-format with black"
     - name: Lint with pylint
-      uses: wearerequired/lint-action@v2
-      with: pylint
       run: |
         pylint ionizer/*.py tests/*.py
     - name: Test with pytest
