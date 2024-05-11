@@ -46,7 +46,8 @@ def gpi_pauli_y(wires):
     Returns:
         List[Operation]: The sequence of GPI rotations that implements the gate.
     """
-    return [GPI(np.pi / 2, wires=wires)]
+    return [
+        GPI(np.pi / 2, wires=wires)]
 
 
 def gpi_pauli_z(wires):
