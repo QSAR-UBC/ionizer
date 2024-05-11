@@ -22,8 +22,8 @@ def _test_inclusion_in_identity_db(db_subset, single_gates, candidate_angles, ca
     """Helper function to test if a candidate gate identity was already found.
 
     Args:
-        db_subset (Dict[str, Tuple(List[float], str, float)]): Subset of database we
-            wish to search for presence of idendity.
+        db_subset (Dict[str, Tuple(Tuple(float), str, float)]): Subset of database we
+            wish to search for presence of identity.
         single_gates (Dict[str, List[Tuple(float, tensor)]]): Dictionary containing
             which gates to generate identities from, along with list of special
             cases of angles/matrices to use in identity generation.
