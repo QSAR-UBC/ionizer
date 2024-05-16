@@ -102,9 +102,7 @@ class TestGPI:
         phi_GPI = self.interface_array(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
-        qnode_GPI = qml.QNode(
-            self.circuit, dev, interface=interface, diff_method=diff_method
-        )
+        qnode_GPI = qml.QNode(self.circuit, dev, interface=interface, diff_method=diff_method)
 
         match interface:
             case "torch":
