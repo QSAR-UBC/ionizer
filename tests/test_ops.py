@@ -13,7 +13,12 @@ from ionizer.ops import GPI
 
 jax.config.update("jax_enable_x64", True)
 
-interfaces = ["autograd", "torch", "tf", "jax"]
+interfaces_and_array_methods = [
+    ["autograd", qml.numpy.array],
+    ["torch", torch.tensor],
+    ["tf", tf.Variable],
+    ["jax", jax.numpy.array],
+]
 diff_methods = ["backprop", "adjoint", "parameter-shift", "finite-diff"]
 two_pi = 2 * np.pi
 
@@ -48,39 +53,26 @@ class TestGPI:
         GPI(phi, wires=0)
         return qml.expval(qml.PauliY(wires=0))
 
-    @staticmethod
-    def interface_array(x, interface):
-        match interface:
-            case "jax":
-                jax.config.update("jax_enable_x64", True)
-                return jax.numpy.array(x)
-            case "torch":
-                return torch.tensor(x)
-            case "tf":
-                return tf.Variable(x)
-            case "autograd":
-                return qml.numpy.array(x)
-
     @pytest.fixture(autouse=True)
     def state(self):
         self._state = State()
 
-    @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_compute_matrix(self, interface):
+    @pytest.mark.parametrize("interface, array_method", interfaces_and_array_methods)
+    def test_GPI_compute_matrix(self, interface, array_method):
         phi_rand = np.random.rand() * two_pi
         phi_values = [0, phi_rand, two_pi]
 
         for phi_value in phi_values:
-            phi_interface = self.interface_array(phi_value, interface)
+            phi_interface = array_method(phi_value, interface)
             gpi_matrix = GPI.compute_matrix(phi_interface)
 
             check_matrix = get_GPI_matrix(phi_value)
 
             assert math.allclose(gpi_matrix, check_matrix)
 
-    @pytest.mark.parametrize("interface", interfaces)
-    def test_GPI_circuit(self, interface, phi):
-        phi_GPI = self.interface_array(phi, interface)
+    @pytest.mark.parametrize("interface, array_method", interfaces_and_array_methods)
+    def test_GPI_circuit(self, interface, array_method, phi):
+        phi_GPI = array_method(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
         qnode_GPI = qml.QNode(self.circuit, dev, interface=interface)
@@ -94,32 +86,29 @@ class TestGPI:
             val_GPI, expected_val, atol=1e-07
         ), f"Given val: {val_GPI}; Expected val: {expected_val}"
 
-    @pytest.mark.parametrize("interface", interfaces)
+    @pytest.mark.parametrize("interface, array_method", interfaces_and_array_methods)
     @pytest.mark.parametrize("diff_method", diff_methods)
     @pytest.mark.parametrize("phi", [0.37 * two_pi, 1.23 * two_pi, two_pi])
-    def test_GPI_grad(self, diff_method, interface):
+    def test_GPI_grad(self, diff_method, interface, array_method):
         phi = np.random.rand() * two_pi
-        phi_GPI = self.interface_array(phi, interface)
+        phi_GPI = array_method(phi, interface)
         dev = qml.device("default.qubit", wires=1)
 
         qnode_GPI = qml.QNode(self.circuit, dev, interface=interface, diff_method=diff_method)
 
-        match interface:
-            case "torch":
-                phi_GPI.requires_grad = True
-                result = qnode_GPI(phi_GPI)
-                result.backward()
-                grad_GPI = phi_GPI.grad
-
-            case "tf":
-                with tf.GradientTape() as tape:
-                    loss = qnode_GPI(phi_GPI)
-                grad_GPI = tape.gradient(loss, phi_GPI)
-            case "jax":
-                grad_GPI = jax.grad(qnode_GPI)(phi_GPI)
-
-            case "autograd":
-                grad_GPI = qml.grad(qnode_GPI, argnum=0)(phi_GPI)
+        if interface == "torch":
+            phi_GPI.requires_grad = True
+            result = qnode_GPI(phi_GPI)
+            result.backward()
+            grad_GPI = phi_GPI.grad
+        elif interface == "tf":
+            with tf.GradientTape() as tape:
+                loss = qnode_GPI(phi_GPI)
+            grad_GPI = tape.gradient(loss, phi_GPI)
+        elif interface == "jax":
+            grad_GPI = jax.grad(qnode_GPI)(phi_GPI)
+        else:
+            grad_GPI = qml.grad(qnode_GPI, argnum=0)(phi_GPI)
 
         expected_inner_product_1 = 1j * self._state.b_conj_a * np.exp(-2j * phi) * (-2j)
         expected_inner_product_2 = -1j * self._state.a_conj_b * np.exp(2j * phi) * 2j
