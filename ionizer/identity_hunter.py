@@ -155,6 +155,8 @@ def lookup_gate_identity(gates):
             "Currently only 2- and 3-gate circuit identities on GPI/GPI2 gates are supported."
         )
 
+    gate_identities = {}
+
     if len(gates) == 2:
         try:
             with DOUBLE_IDENTITY_FILE.open("rb") as infile:
