@@ -37,6 +37,8 @@ class GPI(Operation):
                 e^{i\phi} & 0
               \end{bmatrix}.
 
+    This operation does not work with adjoint differentiation, it will result in an incorrect output.
+
     Args:
         phi (float): rotation angle :math:`\phi`
         wires (Sequence[int] or int): the wire the operation acts on
