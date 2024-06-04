@@ -17,10 +17,15 @@
 """
 Native gates for IonQ hardware as PennyLane operations.
 """
+import functools
+import inspect
 import numpy as np
 
 import pennylane as qml
 from pennylane.operation import Operation
+
+
+stack_last = functools.partial(qml.math.stack, axis=-1)
 
 
 class GPI(Operation):
@@ -31,6 +36,8 @@ class GPI(Operation):
                 0 & e^{-i\phi} \\
                 e^{i\phi} & 0
               \end{bmatrix}.
+
+    This operation does not work with adjoint differentiation, it will result in an incorrect output.
 
     Args:
         phi (float): rotation angle :math:`\phi`
@@ -43,6 +50,30 @@ class GPI(Operation):
     num_wires = 1
     num_params = 1
     ndim_params = (0,)
+    grad_method = "A"
+    parameter_frequencies = [(1,)]
+
+    grad_recipe = ([[1, 1, np.pi / 4], [-1, 1, -np.pi / 4]],)
+
+    def generator(self):
+        r"""The Generator for GPI gate.
+
+        .. math::
+            \hat(G) = \frac{\pi}{2}\begin{bmatrix}
+                1 & e^{i\phi} \\
+                e^{-i\phi} & 1
+              \end{bmatrix} = -\frac{\pi}{2}(I-\cos(\phi)X-\sin(\phi)Y).
+        """
+        phi = self.data[0]
+        c = (np.pi / 2) / phi
+        coeffs = np.array([c, -c * qml.math.cos(phi), -c * qml.math.sin(phi)])
+        observables = [
+            qml.Identity(wires=self.wires),
+            qml.PauliX(wires=self.wires),
+            qml.PauliY(wires=self.wires),
+        ]
+
+        return qml.Hamiltonian(coeffs, observables)
 
     # Note: disable pylint complaint about redefined built-in, since the id
     # value itself is coming from the class definition of Operators in PennyLane proper.
@@ -65,7 +96,14 @@ class GPI(Operation):
         array([[0.        +0.j        , 0.95533649-0.29552021j],
                [0.95533649+0.29552021j, 0.        +0.j        ]])
         """
-        return qml.math.stack([[0, qml.math.exp(-1j * phi)], [qml.math.exp(1j * phi), 0]])
+        if qml.math.get_interface(phi) == "tensorflow":
+            phi = qml.math.cast_like(phi, 1j)
+
+        a = 0 + 0j
+        b = qml.math.exp((0 - 1j) * phi)
+        return qml.math.stack(
+            qml.math.stack([stack_last([a, b]), stack_last([qml.math.conj(b), a])])
+        )
 
     def adjoint(self):
         # The GPI gate is its own adjoint.
