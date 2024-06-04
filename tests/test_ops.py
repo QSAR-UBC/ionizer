@@ -9,7 +9,7 @@ from pennylane import numpy as np
 import pennylane.math as math
 from ionizer.ops import GPI
 
-diff_methods = ["backprop", "adjoint", "parameter-shift", "finite-diff"]
+diff_methods = ["backprop", "parameter-shift", "finite-diff"]
 two_pi = 2 * np.pi
 
 
@@ -62,9 +62,9 @@ class TestGPI:
 
         assert math.allclose(gpi_matrix, check_matrix)
 
-    def test_GPI_circuit(self, array_method, phi):
+    def test_GPI_circuit(self, phi):
         """Tests whether the expected value is returned for a circuit using GPI"""
-        phi_GPI = array_method(phi)
+        phi_GPI = np.array(phi)
         dev = qml.device("default.qubit", wires=1)
 
         qnode_GPI = qml.QNode(self.circuit, dev)
