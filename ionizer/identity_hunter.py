@@ -36,8 +36,11 @@ def _test_inclusion_in_identity_db(db_subset, single_gates, candidate_angles, ca
     """
     # Loop over GPI/GPI2 for all the special angles
     for id_gate, gate_angle_list in single_gates.items():
-        # Get their explicit reference angles and matrix reprensentations
-        angles, matrices = [x[0] for x in gate_angle_list], [x[1] for x in gate_angle_list]
+        # Get their explicit reference angles and matrix representations
+        angles, matrices = (
+            [x[0] for x in gate_angle_list],
+            [x[1] for x in gate_angle_list],
+        )
 
         # Test each reference against the candidate to see if any are equivalent
         for ref_angle, ref_matrix in zip(angles, matrices):

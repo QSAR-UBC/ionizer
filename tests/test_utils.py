@@ -26,13 +26,19 @@ class TestMatrixAngleUtilities:
         "mat1, mat2",
         [
             (np.eye(2), 1j * np.eye(2)),
-            (qml.PauliX.compute_matrix(), np.exp(1j * np.pi / 2) * qml.PauliX.compute_matrix()),
-            (qml.SX.compute_matrix(), np.exp(-1j * np.pi / 2) * qml.SX.compute_matrix()),
+            (
+                qml.PauliX.compute_matrix(),
+                np.exp(1j * np.pi / 2) * qml.PauliX.compute_matrix(),
+            ),
+            (
+                qml.SX.compute_matrix(),
+                np.exp(-1j * np.pi / 2) * qml.SX.compute_matrix(),
+            ),
             (qml.Hadamard.compute_matrix(), -qml.Hadamard.compute_matrix()),
         ],
     )
     def test_equivalent_matrices(self, mat1, mat2):
-        """Test that we correcty identify matrices that are equivalent
+        """Test that we correctly identify matrices that are equivalent
         up to a global phase."""
         assert are_mats_equivalent(mat1, mat2)
 
@@ -45,7 +51,7 @@ class TestMatrixAngleUtilities:
         ],
     )
     def test_inequivalent_matrices(self, mat1, mat2):
-        """Test that we correcty identify matrices that are equivalent
+        """Test that we correctly identify matrices that are equivalent
         up to a global phase."""
         assert not are_mats_equivalent(mat1, mat2)
 
@@ -56,7 +62,10 @@ class TestMatrixAngleUtilities:
             (np.pi, np.pi),
             (-np.pi / 2, -np.pi / 2),
             (3 * np.pi / 2, -np.pi / 2),
-            (np.array([np.pi / 2, 5 * np.pi / 4]), np.array([np.pi / 2, -3 * np.pi / 4])),
+            (
+                np.array([np.pi / 2, 5 * np.pi / 4]),
+                np.array([np.pi / 2, -3 * np.pi / 4]),
+            ),
         ],
     )
     def test_rescale_angles(self, angles, rescaled_angles):

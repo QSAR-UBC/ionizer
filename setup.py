@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages, find_namespace_packages
+from setuptools import setup
 
 requirements = [
     "pennylane>=0.33",
@@ -15,6 +15,7 @@ setup(
     package_data={
         "ionizer.resources": [
             "double_gate_identities.pkl",
-            "triple_gate_identities.pkl"
-        ]},
+            "triple_gate_identities.pkl",
+        ]
+    },
 )

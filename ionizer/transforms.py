@@ -21,6 +21,7 @@ The main transform, @ionizer.transforms.ionize, will perform a full sequence of
 expansions and simplifications of the tape. The transforms it uses during this
 process can also be called individually.
 """
+
 from typing import Sequence, Callable
 from functools import partial
 
@@ -211,7 +212,10 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
                 # this way we can commute it through.
                 if apply_accumulated_phase_gate:
                     new_operations.append(
-                        GPI(-rescale_angles(accumulated_rz_phase) / 2, wires=current_gate.wires)
+                        GPI(
+                            -rescale_angles(accumulated_rz_phase) / 2,
+                            wires=current_gate.wires,
+                        )
                     )
                     new_operations.append(GPI(0.0, wires=current_gate.wires))
 

@@ -5,13 +5,12 @@ name: Python package
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main", "rc-0.*" ]
+    branches: ["main", "rc-0.*"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,26 +18,23 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        ref: ${{ github.event.pull_request.head.ref }}
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-    - name: Install dependencies
-      run: |
-        python -m pip install -U pip poetry
-        poetry --version
-        poetry install
-    - name: Check formatting with black
-      run: |
-        poetry run black -l 100 ionizer/*.py tests/*.py
-    - name: Lint with pylint
-      run: |
-        poetry run pylint ionizer/*.py tests/*.py
-    - name: Test with pytest
-      run: |
-        poetry run pytest tests/test_*.py
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip poetry
+          poetry --version
+          poetry install
+      - name: Check linting and formatting with ruff
+        run: |
+          poetry run ruff check ionizer/*.py tests/*.py
+      - name: Test with pytest
+        run: |
+          poetry run pytest tests/test_*.py
