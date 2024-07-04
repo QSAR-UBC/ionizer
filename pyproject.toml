@@ -1,2 +1,22 @@
 [tool.black]
 line-length = 100
+
+[tool.poetry]
+name = "ionizer"
+version = "0.3.0"
+description = "PennyLane tools for compilation into trapped-ion native gates."
+authors = ["UBC Quantum Software and Algorithms Research Lab"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pennylane = "^0.36"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.2"
+pylint = "3.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
