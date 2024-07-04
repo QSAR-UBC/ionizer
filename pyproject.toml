@@ -10,9 +10,7 @@ repository = "https://github.com/QSAR-UBC/ionizer/"
 license = "MIT"
 readme = "README.md"
 keywords = ["quantum-computing", "quantum-software"]
-include = [
-    { path = "ionizer/resources", format = "pkl" }
-]
+include = [{ path = "ionizer/resources"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
