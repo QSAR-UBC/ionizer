@@ -6,10 +6,12 @@
 #
 #     pre-commit install
 #
+# This file was constructed based on an example file provided by our friends
+# at TUM Chair for Design Automation - thanks!
 
 ci:
-  autoupdate_commit_msg: "⬆️🪝 update pre-commit hooks"
-  autofix_commit_msg: "🎨 pre-commit fixes"
+  autoupdate_commit_msg: "update pre-commit hooks"
+  autofix_commit_msg: "pre-commit fixes"
 
 repos:
   # Standard hooks
