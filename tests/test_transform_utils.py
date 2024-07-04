@@ -1,5 +1,5 @@
 """
-Test the utility functions for the transpilation transforms. 
+Test the utility functions for the transpilation transforms.
 """
 
 import pytest
@@ -147,7 +147,10 @@ class TestSearchAndApplyThreeGateIdentities:
     @pytest.mark.parametrize(
         "input_ops,expected_ops",
         [
-            ([GPI2(np.pi, wires=0), GPI(0, wires=0), GPI2(-np.pi, wires=0)], []),  # Simplifies to I
+            (
+                [GPI2(np.pi, wires=0), GPI(0, wires=0), GPI2(-np.pi, wires=0)],
+                [],
+            ),  # Simplifies to I
             (
                 [GPI2(0, wires=0), GPI(np.pi / 4, wires=0), GPI2(0, wires=0)],
                 [GPI2(-np.pi / 2, wires=0)],
@@ -161,7 +164,11 @@ class TestSearchAndApplyThreeGateIdentities:
                 [GPI2(0.3, wires=0)],
             ),  # Second two gates only
             (
-                [GPI2(-np.pi / 2, wires=0), GPI(-np.pi / 4, wires=0), GPI2(-np.pi / 2, wires=0)],
+                [
+                    GPI2(-np.pi / 2, wires=0),
+                    GPI(-np.pi / 4, wires=0),
+                    GPI2(-np.pi / 2, wires=0),
+                ],
                 [GPI2(-np.pi, wires=0)],
             ),  # 3-gate identity
         ],

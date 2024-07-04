@@ -17,6 +17,7 @@
 """
 Native gates for IonQ hardware as PennyLane operations.
 """
+
 import numpy as np
 
 import pennylane as qml
@@ -114,7 +115,10 @@ class GPI2(Operation):
         """
         exponent = -1j * phi
         return qml.math.stack(
-            [[1, -1j * qml.math.exp(exponent)], [-1j * qml.math.exp(qml.math.conj(exponent)), 1]]
+            [
+                [1, -1j * qml.math.exp(exponent)],
+                [-1j * qml.math.exp(qml.math.conj(exponent)), 1],
+            ]
         ) / np.sqrt(2)
 
     def adjoint(self):

@@ -1,5 +1,5 @@
 """
-Test the suite of transpilation transforms. 
+Test the suite of transpilation transforms.
 """
 
 # pylint: disable=function-redefined
@@ -219,7 +219,8 @@ class TestVirtualizeRZGates:
 
         assert len(transformed_tape.operations) == 1
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=[0]), qml.matrix(transformed_tape, wire_order=[0])
+            qml.matrix(tape, wire_order=[0]),
+            qml.matrix(transformed_tape, wire_order=[0]),
         )
 
     def test_rz_gpi2(self):
@@ -239,7 +240,8 @@ class TestVirtualizeRZGates:
             op.name == name for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI"])
         )
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=[0]), qml.matrix(transformed_tape, wire_order=[0])
+            qml.matrix(tape, wire_order=[0]),
+            qml.matrix(transformed_tape, wire_order=[0]),
         )
 
     def test_rz_gpi_ms(self):
@@ -261,7 +263,8 @@ class TestVirtualizeRZGates:
             for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI", "MS"])
         )
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+            qml.matrix(tape, wire_order=[0, 1]),
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
         )
 
     def test_rz_gpi_multiqubit(self):
@@ -284,7 +287,8 @@ class TestVirtualizeRZGates:
             for op, name in zip(transformed_tape.operations, ["GPI2", "GPI", "GPI", "GPI"])
         )
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+            qml.matrix(tape, wire_order=[0, 1]),
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
         )
 
     def test_rz_gpi_multiqubit_multims(self):
@@ -311,7 +315,8 @@ class TestVirtualizeRZGates:
             )
         )
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=[0, 1]), qml.matrix(transformed_tape, wire_order=[0, 1])
+            qml.matrix(tape, wire_order=[0, 1]),
+            qml.matrix(transformed_tape, wire_order=[0, 1]),
         )
 
 
@@ -337,7 +342,8 @@ class TestSingleQubitGPIFusion:
 
         assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
     def test_no_fusion_multiple_gates(self):
@@ -361,7 +367,8 @@ class TestSingleQubitGPIFusion:
 
         assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
     def test_fusion_three_gates(self):
@@ -385,7 +392,8 @@ class TestSingleQubitGPIFusion:
 
         assert _compare_op_lists(tape.operations, transformed_tape.operations)
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
     def test_fusion_four_gates(self):
@@ -413,7 +421,8 @@ class TestSingleQubitGPIFusion:
 
         assert len(transformed_tape.operations) == len(tape.operations) - 2
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
 
@@ -436,7 +445,8 @@ class TestConvertToGPI:
 
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in transformed_tape.operations)
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
     def test_convert_tape_to_gpi_known_gates_exclusion(self):
@@ -457,7 +467,8 @@ class TestConvertToGPI:
         assert all(op.name in ["GPI", "GPI2", "MS", "RY"] for op in transformed_tape.operations)
         assert transformed_tape.operations[3].name == "RY"
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(3)), qml.matrix(transformed_tape, wire_order=range(3))
+            qml.matrix(tape, wire_order=range(3)),
+            qml.matrix(transformed_tape, wire_order=range(3)),
         )
 
 
@@ -486,7 +497,8 @@ class TestIonize:
 
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in transformed_tape.operations)
         assert are_mats_equivalent(
-            qml.matrix(tape, wire_order=range(4)), qml.matrix(transformed_tape, wire_order=range(4))
+            qml.matrix(tape, wire_order=range(4)),
+            qml.matrix(transformed_tape, wire_order=range(4)),
         )
 
     def test_ionize_qnode(self):

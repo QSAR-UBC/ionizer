@@ -17,6 +17,7 @@
 """
 Utility functions.
 """
+
 import numpy as np
 from pennylane import math
 

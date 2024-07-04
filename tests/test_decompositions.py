@@ -17,6 +17,7 @@
 """
 Test the decompositions of standard operations in to the {GPI, GPI2, MS} gate set.
 """
+
 import pytest
 
 import pennylane as qml
@@ -43,10 +44,18 @@ parametrized_ops = [
 
 single_qubit_unitaries = [
     (np.eye(2), []),
-    (np.array([[0.0, 0.54030231 - 0.84147098j], [0.54030231 + 0.84147098j, 0.0]]), ["GPI"]),
+    (
+        np.array([[0.0, 0.54030231 - 0.84147098j], [0.54030231 + 0.84147098j, 0.0]]),
+        ["GPI"],
+    ),
     (qml.RZ.compute_matrix(0.2), ["GPI", "GPI"]),
     (
-        np.array([[0.70710678, -0.59500984 - 0.38205142j], [0.59500984 - 0.38205142j, 0.70710678]]),
+        np.array(
+            [
+                [0.70710678, -0.59500984 - 0.38205142j],
+                [0.59500984 - 0.38205142j, 0.70710678],
+            ]
+        ),
         ["GPI2"],
     ),
     (qml.RY.compute_matrix(1.0), ["GPI2", "GPI", "GPI2"]),

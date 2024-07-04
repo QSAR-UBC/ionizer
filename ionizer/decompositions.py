@@ -17,6 +17,7 @@
 """
 Custom decompositions of operations into the {GPI, GPI2, MS} native gate set.
 """
+
 from pennylane import math
 import numpy as np
 
@@ -136,7 +137,11 @@ def gpi_ry(phi, wires):
         List[Operation]: The sequence of GPI/GPI2 rotations that implements
         the gate up to a global phase.
     """
-    return [GPI2(np.pi, wires=wires), GPI(phi / 2, wires=wires), GPI2(np.pi, wires=wires)]
+    return [
+        GPI2(np.pi, wires=wires),
+        GPI(phi / 2, wires=wires),
+        GPI2(np.pi, wires=wires),
+    ]
 
 
 def gpi_rz(phi, wires):
