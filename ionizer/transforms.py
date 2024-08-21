@@ -14,12 +14,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Transforms for transpiling normal gates into trapped-ion gates.
+"""Transforms for transpiling normal gates into trapped-ion gates.
 
-The main transform, @ionizer.transforms.ionize, will perform a full sequence of
-expansions and simplifications of the tape. The transforms it uses during this
+The main transform, ``@ionizer.transforms.ionize``, performs a sequence of
+expansions and simplifications of a circuit. The transforms it uses during this
 process can also be called individually.
+
 """
 
 from typing import Sequence, Callable
@@ -45,14 +45,14 @@ from .transform_utils import (
 def commute_through_ms_gates(
     tape: QuantumTape, direction="right"
 ) -> (Sequence[QuantumTape], Callable):
-    """Apply a transform that passes through a tape and pushes GPI/GPI2
-    gates with appropriate (commuting) angles through MS gates.
+    """A transform that pushes GPI/GPI2 gates with appropriate (commuting)
+    angles through :class:`~ionizer.ops.MS` gates.
 
     More specifically, the following commute through MS gates on either qubit:
-        GPI2(0), GPI2(π), GPI2(-π), GPI(0), GPI(π), GPI(-π)
+    :math:`GPI2(0)`, :math:`GPI2(\pm \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
 
-    This function is modelled off PennyLane's commute_controlled transform
-    https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.commute_controlled.html
+    This function is based on PennyLane's `commute_controlled  <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.commute_controlled.html>`_
+    transform.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -62,6 +62,7 @@ def commute_through_ms_gates(
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
     """
     if direction not in ["left", "right"]:
         raise ValueError(
@@ -129,16 +130,20 @@ def commute_through_ms_gates(
 
 @qml.transform
 def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """When dealing with GPI/GPI2/MS gates, RZ gates can be implemented virtually
-    by pushing them through such gates and simply adjusting the phases of the
-    gates we pushed them through:
-        - GPI(x) RZ(z) = GPI(x - z/2)
-        - RZ(z) GPI(x) = GPI(x + z/2)
-        - GPI2(x) RZ(z) = RZ(z) GPI2(x - z)
-        - RZ(z) GPI2(x) = GPI2(x + z) RZ(z)
+    """A transform that applies RZ gates virtually by adjusting the phase
+    of adjacent GPI and GPI2 gates.
 
-    This transform rolls through a tape, and adjusts the circuits so that
-    all the RZs get implemented virtually.
+    This transform reads a circuit from left to right, and applies the
+    following circuit identities (expressed in matrix form)
+
+     - :math:`GPI(x) RZ(z) = GPI(x - z/2)`
+     - :math:`GPI2(x) RZ(z) = RZ(z) GPI2(x - z)`
+
+    RZ are pushed as far right as possible, until MS gates are encountered. Any
+    accumulated phase that remains, :math:`RZ(\phi)`, is then implemented using
+    GPI gates according to the identity
+
+    .. math:: RZ(\phi) = GPI(0) GPI(-\phi/2).
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -236,10 +241,11 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 @qml.transform
 def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     """Perform single-qubit fusion of all sequences of single-qubit gates into
-    no more than 3 GPI/GPI2 gates.
+    no more than three GPI/GPI2 gates.
 
-    This transform is based on PennyLane's single_qubit_fusion transform.
-    https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.single_qubit_fusion.html
+    This transform is based on PennyLane's `single_qubit_fusion
+    <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.single_qubit_fusion.html>`_
+    transform.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -329,10 +335,10 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 @qml.transform
 def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
-    """Transpile a tape directly to native trapped ion gates.
+    """Transpile all gates in a circuit to trapped-ion gates based on
+    known decompositions.
 
-    Any operation without a decomposition in decompositions.py will remain
-    as-is.
+    Any operation without a decomposition in decompositions.py will remain as-is.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -372,10 +378,11 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 
 @qml.transform
 def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """A full set of transpilation passes to apply to convert the circuit
-    into native gates and optimize it.
+    """Apply a sequence of passes to transpile and optimize a circuit
+    over the trapped-ion gate set GPI, GPI2, and MS.
 
-    It performs the following sequence of steps:
+    ``ionize`` performs the following sequence of passes:
+
         - Decomposes all operations into Paulis/Pauli rotations, Hadamard, and CNOT
         - Merges all single-qubit rotations
         - Converts everything except RZ to GPI/GPI2/MS gates
@@ -390,6 +397,7 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
     """
 
     # The tape will first be expanded into known operations

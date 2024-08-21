@@ -67,14 +67,19 @@ def rescale_angles(angles, renormalize_for_json=False):
 
 
 def extract_gpi2_gpi_gpi2_angles(unitary):
-    r"""Given a matrix U, recovers a set of three angles alpha, beta, and
-    gamma such that
-        U = GPI2(alpha) GPI(beta) GPI2(gamma)
+    r"""Given a matrix U, recovers a set of three angles :math:`alpha`,
+    :math:`beta`, and :math:`gamma` such that
+
+    .. math::
+
+        U = GPI2(\alpha) GPI(\beta) GPI2(\gamma)
+
     up to a global phase.
 
-    This function is loosely based on the zyz_decomposition function implemented
-    in the PennyLane decomposition transform, adjusted for a different gate set.
-    https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.zyz_decomposition.html
+    This function is loosely based on the
+    ```zyz_decomposition`` <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.zyz_decomposition.html>`_
+    function implemented in the PennyLane decomposition transform,
+    adjusted for a different gate set.
 
     Args:
         unitary (tensor): A unitary matrix.
