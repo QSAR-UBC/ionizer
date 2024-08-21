@@ -126,17 +126,16 @@ class GPI2(Operation):
 
 
 class MS(Operation):
-    r"""
-    The two-qubit Molmer-Sorenson operation.
+    r"""The two-qubit Molmer-Sorenson operation.
 
     In general this is a parametrized operation, but as the IonQ hardware permits
     only the version where both parameters are 0, this is what we implement.
 
     .. math:: MS = \frac{1}{\sqrt{2}} \begin{bmatrix}
                 1 & 0 & 0 & -i \\
-                0 & 1 & -1j & 0 \\
-                0 & -1j & 1 & 0 \\
-                -1j & 0 & 0 & 1 \\
+                0 & 1 & -i & 0 \\
+                0 & -i & 1 & 0 \\
+                -i & 0 & 0 & 1 \\
               \end{bmatrix}.
 
     Args:
@@ -155,6 +154,27 @@ class MS(Operation):
 
     @staticmethod
     def compute_matrix():  # pylint: disable=arguments-differ
+        r"""Canonical matrix representation in computational basis.
+
+        Args:
+            phi (tensor_like or float): rotation angle
+
+        Returns:
+            tensor_like: canonical matrix
+
+        **Example**
+
+        >>> MS.compute_matrix()
+        array([[ 0.70710678+0.j        ,  0.        +0.j        ,
+                 0.        +0.j        , -0.        -0.70710678j],
+               [ 0.        +0.j        ,  0.70710678+0.j        ,
+                -0.        -0.70710678j,  0.        +0.j        ],
+               [ 0.        +0.j        , -0.        -0.70710678j,
+                 0.70710678+0.j        ,  0.        +0.j        ],
+               [-0.        -0.70710678j,  0.        +0.j        ,
+                 0.        +0.j        ,  0.70710678+0.j        ]])
+
+        """
         return qml.math.stack(
             [[1, 0, 0, -1j], [0, 1, -1j, 0], [0, -1j, 1, 0], [-1j, 0, 0, 1]]
         ) / np.sqrt(2)

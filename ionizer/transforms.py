@@ -45,7 +45,7 @@ from .transform_utils import (
 def commute_through_ms_gates(
     tape: QuantumTape, direction="right"
 ) -> (Sequence[QuantumTape], Callable):
-    """A transform that pushes GPI/GPI2 gates with appropriate (commuting)
+    r"""A transform that pushes GPI/GPI2 gates with appropriate (commuting)
     angles through :class:`~ionizer.ops.MS` gates.
 
     More specifically, the following commute through MS gates on either qubit:
@@ -130,7 +130,7 @@ def commute_through_ms_gates(
 
 @qml.transform
 def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """A transform that applies RZ gates virtually by adjusting the phase
+    r"""A transform that applies RZ gates virtually by adjusting the phase
     of adjacent GPI and GPI2 gates.
 
     This transform reads a circuit from left to right, and applies the
@@ -240,7 +240,7 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
 @qml.transform
 def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """Perform single-qubit fusion of all sequences of single-qubit gates into
+    r"""Perform single-qubit fusion of all sequences of single-qubit gates into
     no more than three GPI/GPI2 gates.
 
     This transform is based on PennyLane's `single_qubit_fusion
@@ -335,7 +335,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 @qml.transform
 def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
-    """Transpile all gates in a circuit to trapped-ion gates based on
+    r"""Transpile all gates in a circuit to trapped-ion gates based on
     known decompositions.
 
     Any operation without a decomposition in decompositions.py will remain as-is.
@@ -378,7 +378,7 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 
 @qml.transform
 def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """Apply a sequence of passes to transpile and optimize a circuit
+    r"""Apply a sequence of passes to transpile and optimize a circuit
     over the trapped-ion gate set GPI, GPI2, and MS.
 
     ``ionize`` performs the following sequence of passes:
