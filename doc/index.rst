@@ -8,9 +8,9 @@ Ionizer documentation
    :maxdepth: 2
    :caption: Contents:
 
-   code/ops
-   code/transforms
-   code/decompositions
-   code/transform_utils
-   code/identity_hunter
-   code/utils
+   source/ops
+   source/transforms
+   source/decompositions
+   source/transform_utils
+   source/identity_hunter
+   source/utils
