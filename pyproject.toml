@@ -11,7 +11,7 @@ include = [{ path = "ionizer/resources"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pennylane = "^0.36"
+pennylane = "^0.37"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.2"
