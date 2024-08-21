@@ -10,7 +10,7 @@ keywords = ["quantum-computing", "quantum-software"]
 include = [{ path = "ionizer/resources"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 pennylane = "^0.37"
 
 [tool.poetry.group.dev.dependencies]
