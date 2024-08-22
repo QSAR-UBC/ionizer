@@ -1,6 +1,6 @@
-"""
+r"""
 Submodule to generate and store a database of circuit identities involving
-up to 3 GPI/GPI2 gates.
+up to three successive :math:`GPI` and :math:`GPI2` gates.
 """
 
 from importlib.resources import files
@@ -56,7 +56,8 @@ def _test_inclusion_in_identity_db(db_subset, single_gates, candidate_angles, ca
 
 
 def generate_gate_identities(single_gates, id_angles, identity_length):
-    """Generates all identities involving specified number of GPI/GPI2 and special angles.
+    """Generates all identities involving specified angles for a sequence
+    of :math:`GPI` and :math:`GPI2` gates.
 
     Args:
         single_gates (Dict[str, List[Tuple(float, tensor)]]): Dictionary containing
@@ -72,13 +73,11 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
         the angles involved in the identity, the resultant gate, and its argument.
 
     Example:
-        If identity_length=2, an entry in the return dictionary under the key 'GPIGPI2'
-        may have the form
+        If ``identity_length=2``, an example return dictionary with one entry is
 
-            ((0.7853981633974483, -2.356194490192345), 'GPI2', 0.7853981633974483)
+            ``{'GPIGPI2': ((0.7853981633974483, -2.356194490192345), 'GPI2', 0.7853981633974483)}``
 
-        This indicates that the product of GPI(0.785398) GPI2(-2.356194) is a GPI2
-        gate with parameter 0.78539.
+        This represents the equality :math:`GPI(0.785398) GPI2(-2.356194) = GPI2(0.78539)`.
     """
 
     gate_identities = {}
@@ -112,9 +111,12 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
 
 
 def generate_gate_identity_database():
-    """Generates all 2- and 3-gate identities involving GPI/GPI2 and special angles.
+    r"""Generates all 2- and 3-gate identities involving :math:`GPI`
+    and :math:`GPI2` and special angles.
 
-    Results are stored in pkl files which can be used later on.
+    Special angles include: :math:`0, \pm \pi/4, \pm \pi/2, \pm 3\pi/4, \pm \pi`.
+
+    Results are stored in ``.pkl`` files which can be used later on.
     """
 
     id_angles = [
@@ -146,9 +148,23 @@ def generate_gate_identity_database():
 
 def lookup_gate_identity(gates):
     """Given a pair of input gates in the order they come in the circuit,
-    look up if there is a circuit identity in our database. Note that the
-    database is constructed using matrix multiplication so we will need to
-    exchange the order of the gates."""
+    look up if there is a circuit identity in our database.
+
+    The required database ships with the Ionizer package. However, should the
+    database not be found, it will be generated.
+
+    Note that the database is constructed using matrix multiplication so we will
+    need to exchange the order of the gates.
+
+
+    Args:
+        gates (List[Operation]): A list of two or three ``GPI`` and/or ``GPI2`` operations.
+
+    Returns:
+        List[Operation]: If an equivalent but shorter sequence of ``GPI`` and ``GPI2`` gates is
+        found in the identity database, this will be returned. If no equivalent sequence
+        is found, the empty list is returned.
+    """
 
     if len(gates) not in [2, 3]:
         raise ValueError("Currently only 2- and 3-gate circuit identities are supported.")
