@@ -23,9 +23,9 @@ from pennylane import math
 
 
 def are_mats_equivalent(unitary1, unitary2):
-    """Checks the equivalence of two unitary matrices.
+    r"""Checks the equivalence of two unitary matrices.
 
-     Args:
+    Args:
         unitary1 (tensor): First unitary matrix.
         unitary2 (tensor): Second unitary matrix.
 
@@ -46,17 +46,20 @@ def are_mats_equivalent(unitary1, unitary2):
 
 
 def rescale_angles(angles, renormalize_for_json=False):
-    r"""Rescale gate rotation angles into a fixed range between -np.pi and np.pi.
+    r"""Rescale gate rotation angles into a fixed range between :math:`-\pi` and
+    :math:`\pi`.
 
     Args:
         angles (tensor): The angles to rescale.
-        renormalize_for_json (bool): By default, we rescale into the range -np.pi to
-            np.pi. If this is set to True, rescale instead into the range -1 to
-            1 (-2\pi to 2\pi) as this the range of angles accepted by IonQ's
-            native gate input specs.
+
+        renormalize_for_json (bool): If ``True``, rescale angles into the range
+            :math:`-1` to :math:`1` (:math:`-2\pi` to :math:`2\pi`), which is
+            the range accepted by IonQ's native gate input specs. Otherwise,
+            rescale to within :math:`-\pi` to :math:`\pi`.
 
     Return:
         (tensor): The rescaled angles.
+
     """
     rescaled_angles = math.arctan2(math.sin(angles), math.cos(angles))
 
@@ -67,8 +70,8 @@ def rescale_angles(angles, renormalize_for_json=False):
 
 
 def extract_gpi2_gpi_gpi2_angles(unitary):
-    r"""Given a matrix U, recovers a set of three angles :math:`alpha`,
-    :math:`beta`, and :math:`gamma` such that
+    r"""Given unitary matrix, recovers a set of three angles :math:`\alpha`,
+    :math:`\beta`, and :math:`\gamma` such that
 
     .. math::
 
@@ -76,18 +79,16 @@ def extract_gpi2_gpi_gpi2_angles(unitary):
 
     up to a global phase.
 
-    This function is loosely based on the
-    ```zyz_decomposition`` <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.zyz_decomposition.html>`_
-    function implemented in the PennyLane decomposition transform,
-    adjusted for a different gate set.
+    This function is loosely based on PennyLane's
+    `zyz_decomposition <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.zyz_decomposition.html>`_.
 
     Args:
         unitary (tensor): A unitary matrix.
 
-    Returns:
-        tensor: Rotation angles for the GPI/GPI2 gates. The order of the
-        returned angles corresponds to the order in which they would be
-        implemented in the circuit.
+    Returns: tensor: Rotation angles for the :math:`GPI` and :math:`GPI2`
+        gates. The order of the returned angles corresponds to the order in
+        which they would appear in a circuit, i.e., ``[gamma, beta, alpha]``.
+
     """
     det = math.angle(math.linalg.det(unitary))
     su2_mat = math.exp(-1j * det / 2) * unitary
@@ -106,8 +107,8 @@ def extract_gpi2_gpi_gpi2_angles(unitary):
 
 
 def tape_to_json(tape, name, shots=100, target="simulator"):
-    """Convert a quantum tape expressed in terms of GPI/GPI2/MS operations
-    into a JSON object suitable for job submission to hardware.
+    """Convert a quantum tape consisting of :math:`GPI`, :math:`GPI2` and
+    :math:`MS` operations into a JSON object suitable for job submission to hardware.
 
     Args:
         tape (QuantumTape): The quantum tape of the circuit to send.
@@ -118,6 +119,7 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
 
     Returns:
         Dict: JSON formatted for submission to hardware.
+
     """
 
     circuit_json = {}

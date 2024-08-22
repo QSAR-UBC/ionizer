@@ -27,7 +27,11 @@ from .utils import extract_gpi2_gpi_gpi2_angles
 
 # Non-parametrized operations (up to phases)
 def gpi_pauli_x(wires):
-    """PauliX decomposition as a GPI gate.
+    r"""Pauli :math:`X` decomposition as a :math:`GPI` gate.
+
+    .. math::
+
+        X = GPI(0)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
@@ -39,7 +43,11 @@ def gpi_pauli_x(wires):
 
 
 def gpi_pauli_y(wires):
-    """PauliY decomposition as a GPI gate.
+    r"""Pauli :math:`Y` decomposition as a :math:`GPI` gate.
+
+    .. math::
+
+        Y = GPI(\pi / 2)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
@@ -51,7 +59,11 @@ def gpi_pauli_y(wires):
 
 
 def gpi_pauli_z(wires):
-    """PauliZ decomposition into GPI gates.
+    r"""Pauli :math:`Z` decomposition into :math:`GPI` gates.
+
+    .. math::
+
+        Z = GPI(-\pi / 2) GPI(0)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
@@ -64,38 +76,50 @@ def gpi_pauli_z(wires):
 
 
 def gpi_hadamard(wires):
-    """Hadamard decomposition into GPI/GPI2 gates.
+    r"""Hadamard decomposition into :math:`GPI` and :math:`GPI2` gates.
+
+    .. math::
+
+        H = GPI2(-\pi / 2) GPI(0)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI/GPI2 rotations that implements
+        List[Operation]: The sequence of :math:`GPI` and :math:`GPI2` rotations that implements
         the gate up to a global phase.
     """
     return [GPI(0.0, wires=wires), GPI2(-np.pi / 2, wires=wires)]
 
 
 def gpi_sx(wires):
-    """Square-root of PauliX as a GPI2 gate.
+    r"""Square-root of :math:`X` decomposition into :math:`GPI2` gate.
+
+    .. math::
+
+        \sqrt{X} = GPI2(0)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The GPI2 rotation that implements the gate.
+        List[Operation]: The :math:`GPI2` rotation that implements the gate.
     """
     return [GPI2(0.0, wires=wires)]
 
 
 def gpi_cnot(wires):
-    """CNOT decomposition into GPI2 and MS gate.
+    r"""CNOT decomposition into :math:`GPI2` and :math:`MS` gates.
+
+    .. math::
+
+        CNOT_{ij} = GPI2_i(-\pi/2) GPI2_i(\pi) GPI2_j(\pi) MS_{ij} GPI2_i(\pi/2)
 
     Args:
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI2 rotations that implements
+        List[Operation]: The sequence of trapped ion gates that implements
         the gate up to a global phase.
     """
     return [
@@ -109,14 +133,18 @@ def gpi_cnot(wires):
 
 # Parametrized operations (up to phases)
 def gpi_rx(phi, wires):
-    """RX decomposition into GPI/GPI2 gates.
+    r""":math:`RX` decomposition into :math:`GPI` and :math:`GPI2` gates.
+
+    .. math::
+
+        RX(\phi) = GPI2(\pi/2) GPI(\phi/2 - \pi/2) GPI2(\pi/2)
 
     Args:
         phi (tensor): Rotation angle
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI/GPI2 rotations that implements
+        List[Operation]: The sequence of :math:`GPI` and :math:`GPI2` rotations that implements
         the gate up to a global phase.
     """
     return [
@@ -127,14 +155,18 @@ def gpi_rx(phi, wires):
 
 
 def gpi_ry(phi, wires):
-    """RY decomposition into GPI/GPI2 gates.
+    r""":math:`RY` decomposition into :math:`GPI` and :math:`GPI2` gates.
+
+    .. math::
+
+        RY(\phi) = GPI2(\pi) GPI(\phi/2) GPI2(\pi)
 
     Args:
         phi (tensor): Rotation angle
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI/GPI2 rotations that implements
+        List[Operation]: The sequence of :math:`GPI` and :math:`GPI2` rotations that implements
         the gate up to a global phase.
     """
     return [
@@ -145,21 +177,25 @@ def gpi_ry(phi, wires):
 
 
 def gpi_rz(phi, wires):
-    """RZ decomposition into GPI/GPI2 gates.
+    r""":math:`RZ` decomposition into :math:`GPI` gates.
+
+    .. math::
+
+        RZ(\phi) = GPI(0) GPI(-\pi/2)
 
     Args:
         phi (tensor): Rotation angle
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI/GPI2 rotations that implements
+        List[Operation]: The sequence of :math:`GPI`  rotations that implements
         the gate up to a global phase.
     """
     return [GPI(-phi / 2, wires=wires), GPI(0.0, wires=wires)]
 
 
 def gpi_single_qubit_unitary(unitary, wires):
-    """Single-qubit unitary matrix decomposition into GPI/GPI2 gates.
+    r"""Single-qubit unitary matrix decomposition into GPI/GPI2 gates.
 
     This function is modeled off of PennyLane's unitary_to_rot transform:
     https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.unitary_to_rot.html
@@ -169,7 +205,7 @@ def gpi_single_qubit_unitary(unitary, wires):
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI/GPI2 rotations that implements
+        List[Operation]: The sequence of :math:`GPI` and :math:`GPI2` rotations that implements
         the desired unitary up to a global phase.
     """
     # Check in case we have the identity
