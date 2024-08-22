@@ -979,20 +979,6 @@ lint = ["flake8 (>=6.0)", "mypy (==1.11.0)", "pytest (>=6.0)", "ruff (==0.5.5)",
 test = ["cython (>=3.0)", "defusedxml (>=0.7.1)", "pytest (>=8.0)", "setuptools (>=70.0)", "typing_extensions (>=4.9)"]
 
 [[package]]
-name = "sphinx-press-theme"
-version = "0.9.1"
-description = "A Sphinx-doc theme based on Vuepress"
-optional = false
-python-versions = "*"
-files = [
-    {file = "sphinx_press_theme-0.9.1-py3-none-any.whl", hash = "sha256:eed3fdd8df249b67136b507dfc6a84d1a2c5feca5376960c6d4d28ada4f6cdf7"},
-    {file = "sphinx_press_theme-0.9.1.tar.gz", hash = "sha256:1643dee7365f7831d1d3971b389b7c255641a7aced75f0681f71574e380046cf"},
-]
-
-[package.dependencies]
-sphinx = ">=4.0.1"
-
-[[package]]
 name = "sphinx-rtd-theme"
 version = "3.0.0rc1"
 description = "Read the Docs theme for Sphinx"
@@ -1192,4 +1178,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cc5f51273d04ae65e1535a00d2794a6bd3e33f69cdb2778d67abe3f8dac24382"
+content-hash = "b4bd2f675198e4f96dddbfe71aebcaad43f3293fb4bb3ebb82c924e8a10a9730"
