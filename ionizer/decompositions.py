@@ -38,7 +38,7 @@ def gpi_pauli_x(wires):
         wires (Sequence[int] or pennylane.Wires): The wires this gate is acting on.
 
     Returns:
-        List[Operation]: The sequence of GPI rotations that implements the gate.
+        List[Operation]: The sequence of :math:`GPI` rotations that implements the gate.
     """
     return [GPI(0.0, wires=wires)]
 
