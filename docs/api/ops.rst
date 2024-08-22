@@ -1,5 +1,5 @@
-Trapped-ion gates
-=================
+Operations
+==========
 
 .. automodule:: ionizer.ops
    :members:

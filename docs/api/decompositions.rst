@@ -1,3 +1,5 @@
+.. _decompositions:
+
 Decompositions of trapped-ion native gates
 ==========================================
 

@@ -1,5 +1,5 @@
-Transforms
-==========
+Compilation transforms
+======================
 
 .. automodule:: ionizer.transforms
    :members:
@@ -9,3 +9,11 @@ Transforms
    .. automethod:: ionizer.transforms.virtualize_rz_gates
    .. automethod:: ionizer.transforms.single_qubit_fusion_gpi
    .. automethod:: ionizer.transforms.convert_to_gpi
+
+
+Utility functions
+-----------------
+		   
+.. automodule:: ionizer.transform_utils
+   :members:
+		   
