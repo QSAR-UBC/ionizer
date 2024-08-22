@@ -14,8 +14,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Custom decompositions of operations into the {GPI, GPI2, MS} native gate set.
+r"""
+Custom decompositions of operations into the :math:`GPI`, :math:`GPI2`, and
+:math:`MS` native gate set.
 """
 
 from pennylane import math
@@ -195,7 +196,7 @@ def gpi_rz(phi, wires):
 
 
 def gpi_single_qubit_unitary(unitary, wires):
-    r"""Single-qubit unitary matrix decomposition into GPI/GPI2 gates.
+    r"""Single-qubit unitary matrix decomposition into :math:`GPI` and :math:`GPI2` gates.
 
     This function is modeled off of PennyLane's unitary_to_rot transform:
     https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.unitary_to_rot.html

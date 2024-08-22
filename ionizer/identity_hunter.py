@@ -64,8 +64,7 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
             which gates to generate identities from, along with list of special
             cases of angles/matrices to use in identity generation.
         id_angles (List[float]): Special values of angles used in identity generation.
-        identity_length (int): How long a gate sequence to test. Given gate fusion
-            rules, it makes sense only to have this as value 2 or 3.
+        identity_length (int): How long a gate sequence to test. Must be 2 or 3.
 
     Returns:
         Dict[str, Tuple(Tuple(float), str, float)]: Dictionary of identities
