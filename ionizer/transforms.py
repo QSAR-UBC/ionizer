@@ -49,8 +49,8 @@ def commute_through_ms_gates(
     special angle values through :class:`~ionizer.ops.MS` gates.
 
     More specifically, the following gates commute through :math:`MS` gates when
-    applied to either qubit in the :math:`MS`: :math:`GPI2(0)`, :math:`GPI2(\pm
-    \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
+    applied to either qubit in the :math:`MS` gate: :math:`GPI2(0)`,
+    :math:`GPI2(\pm \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
 
     When there are multiple adjacent :math:`MS` gates, commuting :math:`GPI` and
     :math:`GPI2` gates are pushed as far as possible in the specified direction
@@ -551,6 +551,31 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from ionizer.transforms import ionize
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @ionize
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.PauliX(wires=1)
+            qml.RX(0.2, wires=2)
+            qml.CRY(0.3, wires=[0, 1])
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ─────────────────────────────────────╭MS──────────────────────────────────────╭MS──GPI2(-1.57)─┤  Probs
+        1: ──GPI2(1.57)──GPI(-0.86)──GPI2(1.42)─╰MS──GPI2(-1.57)──GPI(2.43)──GPI2(-1.42)─╰MS──────────────┤  Probs
+        2: ──GPI2(1.57)──GPI(-1.47)──GPI2(1.57)───────────────────────────────────────────────────────────┤  Probs
 
     """
 
