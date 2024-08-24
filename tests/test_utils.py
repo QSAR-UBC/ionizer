@@ -4,6 +4,8 @@ Test utility functions.
 
 import pytest
 
+from functools import partial
+
 import numpy as np
 import pennylane as qml
 from pennylane import math
@@ -11,12 +13,126 @@ from pennylane import math
 from ionizer.ops import GPI, GPI2, MS
 from ionizer.utils import (
     are_mats_equivalent,
+    flag_non_equivalence,
     rescale_angles,
     extract_gpi2_gpi_gpi2_angles,
     tape_to_json,
 )
 
 from test_decompositions import single_qubit_unitaries  # pylint: disable=wrong-import-order
+
+
+@qml.transform
+def add_bad_gates(tape, verify_equivalence=False):
+    """A transform that behaves incorrectly.
+
+    Used to test the equivalence checking mechanism. Since all our
+    implemented transforms preserve equivalence, we create this "bad" transform,
+    which has the same structure as the others, to validate that an error is
+    raised when the transformed circuit is not equivalent.
+    """
+
+    new_operations = []
+    for op in tape.operations:
+        new_operations.append(op)
+        new_operations.append(op)
+
+    new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
+
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
+    def null_postprocessing(results):
+        return results[0]
+
+    return [new_tape], null_postprocessing
+
+
+class TestEquivalenceMechanism:
+
+    def test_equivalence_tape(self):
+        """Test that non-equivalence is correctly detected when a transform is
+        applied to tapes."""
+
+        with qml.tape.QuantumTape() as tape:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+
+        # Will pass without issue
+        add_bad_gates(tape)
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            _ = partial(add_bad_gates, verify_equivalence=True)(tape)
+
+    def test_equivalence_qfunc(self):
+        """Test that non-equivalence is correctly detected for quantum
+        function transforms."""
+
+        def qfunc():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        transformed_qfunc = add_bad_gates(qfunc)
+        _ = qml.tape.make_qscript(transformed_qfunc)()
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            transformed_qfunc = partial(add_bad_gates, verify_equivalence=True)(qfunc)
+            _ = qml.tape.make_qscript(transformed_qfunc)()
+
+    def test_equivalence_qnode(self):
+        """Test that non-equivalence is correctly detected for transforms applied to QNodes."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        # Will pass without issue; note that the QNode must be called for the
+        # transform to execute.
+        transformed_qnode = add_bad_gates(circuit)
+        transformed_qnode()
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            transformed_qnode = partial(add_bad_gates, verify_equivalence=True)(circuit)
+            transformed_qnode()
+
+    def test_equivalence_qnode_default(self):
+        """Test that non-equivalence is not detected if we do not add the flag
+        in the decorator."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @add_bad_gates
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        circuit()
+
+    @pytest.mark.parametrize("verify_equivalence", [True, False])
+    def test_equivalence_composition(self, verify_equivalence):
+        """Test that non-equivalence is correctly detected for a bad transform applied
+        before a good one in a QNode."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @partial(add_bad_gates, verify_equivalence=verify_equivalence)
+        @qml.transforms.cancel_inverses
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        if verify_equivalence is True:
+            with pytest.raises(ValueError, match="not equivalent after transform"):
+                circuit()
+        else:
+            circuit()
 
 
 class TestMatrixAngleUtilities:

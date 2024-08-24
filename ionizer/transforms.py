@@ -20,6 +20,13 @@ The main transform in this module, :func:`ionizer.transforms.ionize`,
 performs end-to-end transpilation and optimization of circuits. It calls a
 number of helper transforms which can also be used individually.
 
+While all transforms should preserve the behaviour of the circuit, they contain
+a mechanism for under-the-hood equivalence checking (up to a global phase)
+through the ``verify_equivalence`` flag. When set, an error will be raised if
+the transpiled circuit is not equivalent to the original. This flag is ``False``
+by default as equivalence is checked at the unitary matrix level. For more details, see
+:func:`ionizer.utils.flag_non_equivalence`.
+
 """
 
 from typing import Sequence, Callable
@@ -32,32 +39,13 @@ from pennylane import math
 from pennylane.tape import QuantumTape
 from pennylane.transforms.optimization.optimization_utils import find_next_gate
 
-from .utils import are_mats_equivalent, rescale_angles, extract_gpi2_gpi_gpi2_angles
+from .utils import flag_non_equivalence, rescale_angles, extract_gpi2_gpi_gpi2_angles
 from .decompositions import decomp_map
 from .ops import GPI, GPI2
 from .identity_hunter import (
     search_and_apply_two_gate_identities,
     search_and_apply_three_gate_identities,
 )
-
-
-def _check_equivalence(tape1, tape2):
-    """Check equivalence of two tapes up to a global phase.
-
-    Args:
-        tape1 (pennylane.QuantumTape): a quantum tape
-        tape2 (pennylane.QuantumTape): quantum tape to compare with ``tape1``
-
-    Raises:
-        ValueError if the two circuits are not equivalent.
-    """
-    # Compute matrix representation using a consistent wire order
-    joint_wires = qml.wires.Wires.all_wires([tape1.wires, tape2.wires])
-    matrix_1 = qml.matrix(tape1, wire_order=joint_wires)
-    matrix_2 = qml.matrix(tape2, wire_order=joint_wires)
-
-    if not are_mats_equivalent(matrix_1, matrix_2):
-        raise ValueError("Quantum circuits are not equivalent after transform.")
 
 
 @qml.transform
@@ -82,8 +70,9 @@ def commute_through_ms_gates(
         tape (pennylane.QuantumTape): A quantum tape to transform.
         direction (str): Either ``"right"`` (default) or ``"left"`` to indicate
             the direction gates should move (from a circuit diagram perspective).
-        verify_equivalence (bool): Whether to perform equivalence checking of
-            the circuit before and after the transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -174,7 +163,7 @@ def commute_through_ms_gates(
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     if verify_equivalence:
-        _check_equivalence(tape, new_tape)
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
@@ -203,9 +192,10 @@ def virtualize_rz_gates(tape: QuantumTape, verify_equivalence=False) -> (Sequenc
     .. math:: RZ(\phi) = GPI(0) GPI(-\phi/2).
 
     Args:
-        tape (pennylane.QuantumTape): A quantum tape to transform.
-        verify_equivalence (bool): Whether to perform equivalence checking of
-            the circuit before and after the transform.
+        tape (pennylane.QuantumTape): A quantum tape to transform
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -321,7 +311,7 @@ def virtualize_rz_gates(tape: QuantumTape, verify_equivalence=False) -> (Sequenc
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     if verify_equivalence:
-        _check_equivalence(tape, new_tape)
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
@@ -351,8 +341,9 @@ def single_qubit_fusion_gpi(tape: QuantumTape, verify_equivalence=False) -> (Seq
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
-        verify_equivalence (bool): Whether to perform equivalence checking of
-            the circuit before and after the transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -467,7 +458,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape, verify_equivalence=False) -> (Seq
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     if verify_equivalence:
-        _check_equivalence(tape, new_tape)
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
@@ -486,8 +477,9 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None, verify_equivalence=Fals
         tape (pennylane.QuantumTape): A quantum tape to transform.
         exclude_list (list[str]): A list of names of gates to exclude from
             conversion (see the ionize transform for an example).
-        verify_equivalence (bool): Whether to perform equivalence checking of
-            the circuit before and after the transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -555,7 +547,7 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None, verify_equivalence=Fals
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
     if verify_equivalence:
-        _check_equivalence(tape, new_tape)
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
@@ -581,10 +573,17 @@ def ionize(tape: QuantumTape, verify_equivalence=False) -> (Sequence[QuantumTape
           :math:`MS` gates, and perform simplification based on a database of
           circuit identities.
 
+    .. note::
+
+        When ``verify_equivalence`` is set to ``True``, equivalence checking up
+        to a global phase is performed with respect to the initial and final
+        circuit matrices only. It is not checked for intermediate transforms.
+    
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
-        verify_equivalence (bool): Whether to perform equivalence checking of
-            the circuit before and after the transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -642,7 +641,7 @@ def ionize(tape: QuantumTape, verify_equivalence=False) -> (Sequence[QuantumTape
     new_tape = type(tape)(optimized_tape[0].operations, tape.measurements, shots=tape.shots)
 
     if verify_equivalence:
-        _check_equivalence(tape, new_tape)
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
