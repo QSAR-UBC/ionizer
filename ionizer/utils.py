@@ -151,7 +151,7 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
     job submission API.
 
     Note that this function is not tested against the API in an automated, or
-    manual way. If you this function needs to be updated to work with API changes,
+    manual way. If this function needs to be updated to work with API changes,
     please `open an issue <https://github.com/QSAR-UBC/ionizer/issues>`_.
 
     Args:
