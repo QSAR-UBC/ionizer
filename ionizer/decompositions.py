@@ -110,7 +110,7 @@ def gpi_sx(wires):
 
 
 def gpi_cnot(wires):
-    r"""CNOT decomposition into :math:`GPI2` and :math:`MS` gates.
+    r""":math:`CNOT` decomposition into :math:`GPI2` and :math:`MS` gates.
 
     .. math::
 

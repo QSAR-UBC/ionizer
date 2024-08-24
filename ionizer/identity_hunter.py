@@ -1,6 +1,10 @@
-r"""
-Submodule to generate and store a database of circuit identities involving
+r"""Submodule to generate and store a database of circuit identities involving
 up to three successive :math:`GPI` and :math:`GPI2` gates.
+
+This module is primarily for internal use, and exposes only a function to query
+the database for an identity involving the desired gate sequence. The database
+itself is included as a set of pickle files with the package.
+
 """
 
 from importlib.resources import files
@@ -55,7 +59,7 @@ def _test_inclusion_in_identity_db(db_subset, single_gates, candidate_angles, ca
     return None, None
 
 
-def generate_gate_identities(single_gates, id_angles, identity_length):
+def _generate_gate_identities(single_gates, id_angles, identity_length):
     """Generates all identities involving specified angles for a sequence
     of :math:`GPI` and :math:`GPI2` gates.
 
@@ -109,7 +113,7 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
     return gate_identities
 
 
-def generate_gate_identity_database():
+def _generate_gate_identity_database():
     r"""Generates all 2- and 3-gate identities involving :math:`GPI`
     and :math:`GPI2` and special angles.
 
@@ -135,8 +139,8 @@ def generate_gate_identity_database():
         "GPI2": [([angle], GPI2.compute_matrix(angle)) for angle in id_angles],
     }
 
-    double_gate_identities = generate_gate_identities(single_gates, id_angles, 2)
-    triple_gate_identities = generate_gate_identities(single_gates, id_angles, 3)
+    double_gate_identities = _generate_gate_identities(single_gates, id_angles, 2)
+    triple_gate_identities = _generate_gate_identities(single_gates, id_angles, 3)
 
     with DOUBLE_IDENTITY_FILE.open("wb") as outfile:
         pickle.dump(double_gate_identities, outfile)
@@ -146,23 +150,20 @@ def generate_gate_identity_database():
 
 
 def lookup_gate_identity(gates):
-    """Given a pair of input gates in the order they come in the circuit,
-    look up if there is a circuit identity in our database.
+    """Given a sequence of input gates, query a database of known circuit
+    identities for a shorter implementation.
 
-    The required database ships with the Ionizer package. However, should the
-    database not be found, it will be generated.
-
-    Note that the database is constructed using matrix multiplication so we will
-    need to exchange the order of the gates.
-
+    The database is included with the Ionizer package.
 
     Args:
         gates (List[Operation]): A list of two or three ``GPI`` and/or ``GPI2`` operations.
+            These should be ordered as they appear in the circuit diagram.
 
     Returns:
         List[Operation]: If an equivalent but shorter sequence of ``GPI`` and ``GPI2`` gates is
         found in the identity database, this will be returned. If no equivalent sequence
         is found, the empty list is returned.
+
     """
 
     if len(gates) not in [2, 3]:
@@ -181,7 +182,7 @@ def lookup_gate_identity(gates):
                 gate_identities = pickle.load(infile)
         except FileNotFoundError:
             # Generate the file first and then load it
-            generate_gate_identity_database()
+            _generate_gate_identity_database()
             with DOUBLE_IDENTITY_FILE.open("rb") as infile:
                 gate_identities = pickle.load(infile)
     elif len(gates) == 3:
@@ -190,11 +191,13 @@ def lookup_gate_identity(gates):
                 gate_identities = pickle.load(infile)
         except FileNotFoundError:
             # Generate the file first and then load it
-            generate_gate_identity_database()
+            _generate_gate_identity_database()
             with TRIPLE_IDENTITY_FILE.open("rb") as infile:
                 gate_identities = pickle.load(infile)
 
-    # Get the information about this particular combination of gates
+    # Get the information about this particular combination of gates. Note that
+    # the database is constructed using matrix multiplication so we will need to
+    # exchange the order of the gates.
     combo_name = "".join([gate.name for gate in gates[::-1]])
     combo_angles = [float(gate.data[0]) for gate in gates[::-1]]
 

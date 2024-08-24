@@ -18,7 +18,7 @@
 
 The main transform in this module is :func:`ionizer.transforms.ionize`, which
 performs end-to-end transpilation and optimization of circuits. It calls a
-number of helper transforms for various subtasks, which can be used individually.
+number of helper transforms which can also be used individually.
 
 """
 
