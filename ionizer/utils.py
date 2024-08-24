@@ -64,6 +64,36 @@ def flag_non_equivalence(tape1, tape2):
 
     Raises:
         ValueError if the two circuits are not equivalent.
+
+    **Example**
+
+    .. code::
+
+        with qml.tape.QuantumTape() as tape1:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.T(wires=1)
+
+        with qml.tape.QuantumTape() as tape2_equiv:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.RZ(np.pi/4, wires=1)
+
+        with qml.tape.QuantumTape() as tape3_nonequiv:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            qml.RZ(np.pi/2, wires=1)
+
+    .. code::
+
+        >>> flag_non_equivalence(tape1, tape2_equiv)
+        >>> flag_non_equivalence(tape1, tape3_nonequiv)
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "ionizer/utils.py", line 98, in flag_non_equivalence
+            raise ValueError("Quantum circuits are not equivalent after transform.")
+        ValueError: Quantum circuits are not equivalent after transform.
+
     """
     # Compute matrix representation using a consistent wire order
     joint_wires = qml.wires.Wires.all_wires([tape1.wires, tape2.wires])
