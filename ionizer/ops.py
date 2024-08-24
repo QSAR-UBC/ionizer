@@ -25,7 +25,7 @@ from pennylane.operation import Operation
 
 
 class GPI(Operation):
-    r"""The single-qubit GPI rotation
+    r"""The single-qubit :math:`GPI` rotation
 
     .. math:: GPI(\phi) = \begin{bmatrix}
         0 & e^{-i\phi} \\ e^{i\phi} & 0
@@ -74,7 +74,7 @@ class GPI(Operation):
 
 
 class GPI2(Operation):
-    r"""The single-qubit GPI rotation
+    r"""The single-qubit :math:`GPI2` rotation
 
     .. math:: GPI2(\phi) = \frac{1}{\sqrt{2}} \begin{bmatrix}
         1 & -ie^{-i\phi} \\ -ie^{i\phi} & 1
@@ -126,10 +126,10 @@ class GPI2(Operation):
 
 
 class MS(Operation):
-    r"""The two-qubit Molmer-Sorenson operation.
+    r"""The two-qubit Mølmer-Sørensen (MS) operation.
 
-    In general this is a parametrized operation, but as the IonQ hardware permits
-    only the version where both parameters are 0, this is what we implement.
+    In general this is a parametrized operation, but the IonQ hardware permits
+    only this version, where both parameters are 0.
 
     .. math:: MS = \frac{1}{\sqrt{2}} \begin{bmatrix}
                 1 & 0 & 0 & -i \\

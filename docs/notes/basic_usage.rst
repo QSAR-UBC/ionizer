@@ -3,12 +3,14 @@ Basic usage
 
 The goal of the package is to provide a single, easy-to-use transform that will
 both transpile and optimize a circuit expressed using arbitrary gates into the
-native gate set, :class:`ionizer.ops.GPI`, :class:`ionizer.ops.GPI2`, and
-:class:`ionizer.ops.MS` (for more information about these gates, see the `PennyLane
-blog post
-<https://pennylane.ai/blog/2023/06/the-ionizer-building-a-hardware-specific-transpiler-using-pennylane/>`_).
+native gate set of IonQ's trapped-ion devices, :class:`ionizer.ops.GPI`,
+:class:`ionizer.ops.GPI2`, and :class:`ionizer.ops.MS`.
 
-Circuits expressed using a set of regular PennyLane gates can be decorated with the
+For more information about these gates, see the `PennyLane blog post
+<https://pennylane.ai/blog/2023/06/the-ionizer-building-a-hardware-specific-transpiler-using-pennylane/>`_
+and `IonQ documentation <https://ionq.com/docs/getting-started-with-native-gates>`_.
+
+Circuits expressed using any regular PennyLane gates can be decorated with the
 :func:`ionizer.transforms.ionize` transform, and executed as normal.
 
 .. code::
@@ -39,7 +41,7 @@ Circuits expressed using a set of regular PennyLane gates can be decorated with 
 
    Compiled circuits are not guaranteed to be optimal. However, they should be
    significantly smaller than what one would obtain by performing a naive 1-1
-   mapping to the native gates.
+   mapping to native gates.
 
 
 Transforms can also be applied to QNodes directly, even after they are
@@ -65,9 +67,9 @@ constructed:
 .. warning::
 
    Full automatic differentiation is not currently supported by the Ionizer. It
-   is recommended to first construct a circuit with the desired parameters, then
-   transpile that circuit for execution. This can be done by applying the
-   transform to one or more quantum tapes directly.
+   is recommended to first construct the required circuits with the desired
+   parameters, then transpile that circuit for execution. This can be done by
+   applying the transform to one or more quantum tapes directly.
 
    For example, the following code transpiles both quantum circuits required to
    the parameter shift gradient of the circuit above.

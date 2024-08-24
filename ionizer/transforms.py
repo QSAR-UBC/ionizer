@@ -16,7 +16,7 @@
 # limitations under the License.
 """Transforms for transpiling textbook gates into native trapped-ion gates.
 
-The main transform in this module is :func:`ionizer.transforms.ionize`, which
+The main transform in this module, :func:`ionizer.transforms.ionize`, 
 performs end-to-end transpilation and optimization of circuits. It calls a
 number of helper transforms which can also be used individually.
 
@@ -45,12 +45,12 @@ from .transform_utils import (
 def commute_through_ms_gates(
     tape: QuantumTape, direction="right"
 ) -> (Sequence[QuantumTape], Callable):
-    r"""A transform that commutes :math:`GPI` and :math:`GPI2` gates with
-    special angle values through :class:`~ionizer.ops.MS` gates.
+    r"""Commute :math:`GPI` and :math:`GPI2` gates with special angle values
+    through :class:`~ionizer.ops.MS` gates.
 
-    More specifically, the following gates commute through :math:`MS` gates when
-    applied to either qubit in the :math:`MS` gate: :math:`GPI2(0)`,
-    :math:`GPI2(\pm \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
+    The following gates commute with :math:`MS` gates when applied to either
+    qubit in the :math:`MS` gate: :math:`GPI2(0)`, :math:`GPI2(\pm \pi)`,
+    :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
 
     When there are multiple adjacent :math:`MS` gates, commuting :math:`GPI` and
     :math:`GPI2` gates are pushed as far as possible in the specified direction
@@ -163,11 +163,11 @@ def commute_through_ms_gates(
 
 @qml.transform
 def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    r"""Applies :math:`RZ` gates virtually by adjusting the phase of adjacent
+    r"""Apply :math:`RZ` gates virtually by adjusting the phase of adjacent
     :math:`GPI` and :math:`GPI2` gates.
 
     This transform reads a circuit from left to right, and applies the
-    following circuit identities (expressed in matrix order)
+    following circuit identities (expressed in matrix order):
 
      - :math:`GPI(x) RZ(z) = GPI(x - z/2)`
      - :math:`GPI2(x) RZ(z) = RZ(z) GPI2(x - z)`
@@ -446,10 +446,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 @qml.transform
 def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
-    r"""Transpile all gates in a circuit to trapped-ion gates based on
-    known decompositions.
-
-    Any operation without a decomposition in decompositions.py will remain as-is.
+    r"""Transpile desired gates in a circuit to trapped-ion gates.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -540,9 +537,10 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         - Decompose all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
         - Cancel inverses and merge single-qubit rotations
         - Convert everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
-        - Virtually apply :math:`RZ` gates
-        - Repeatedly apply gate fusion and commutation through :math:`MS` gates, and
-          performs simplification based on a database of circuit identities.
+        - Virtually apply :math:`RZ` gates   
+        - Repeatedly apply single-qubit gate fusion and commutation through
+          :math:`MS` gates, and perform simplification based on a database of
+          circuit identities.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.

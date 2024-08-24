@@ -27,3 +27,33 @@ Gates <https://ionq.com/docs/getting-started-with-native-gates>`_.
    api/decompositions
    api/identity_hunter
    api/utils
+
+Contributing
+------------
+
+The Ionizer is available open source on `GitHub
+<https://github.com/QSAR-UBC/ionizer>`_ under the MIT License.  Contributions
+are welcome. Please open an issue if you are interested in contributing, or if
+you encounter a bug.
+
+Reference
+---------
+
+The Ionizer is developed and maintained by the `Quantum Software and Algorithms
+Research Lab <https://glassnotes.github.io/qsar.html>` at UBC. 
+
+If you use the Ionizer as part of your project, we would appreciate if you cite
+it using the BibTeX below.
+
+.. code::
+
+    @software{di_matteo_2024_10761367,
+     author       = {Di Matteo, Olivia},
+     title        = {The Ionizer},
+     month        = mar,
+     year         = 2024,
+     publisher    = {Zenodo},
+     version      = {0.2},
+     doi          = {10.5281/zenodo.10761367},
+     url          = {https://doi.org/10.5281/zenodo.10761367}
+    }
