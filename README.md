@@ -1,6 +1,6 @@
 # The Ionizer
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13370396.svg)](https://doi.org/10.5281/zenodo.13370396)
 <a href="https://ionizer.readthedocs.io/en/stable/" target="_blank"><img src="https://readthedocs.org/projects/ionizer/badge/?version=stable"></a>
 
 Transpile and optimize your PennyLane circuits into
@@ -149,14 +149,14 @@ encounter a bug.
 If you use the Ionizer as part of your workflow, we would appreciate if you cite it using the BibTeX below.
 
 ```
-@software{di_matteo_2024_10761367,
+@software{di_matteo_2024_13370396,
   author       = {Di Matteo, Olivia},
   title        = {The Ionizer},
   month        = aug,
   year         = 2024,
   publisher    = {Zenodo},
   version      = {0.3},
-  doi          = {10.5281/zenodo.10761367},
-  url          = {https://doi.org/10.5281/zenodo.10761367}
+  doi          = {10.5281/zenodo.13370396},
+  url          = {https://doi.org/10.5281/zenodo.13370396}
 }
 ```
