@@ -510,8 +510,6 @@ class TestIonize:
         transformed_qfunc = ionize(qfunc, verify_equivalence=verify_equivalence)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
-        print(transformed_tape.operations)
-
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in transformed_tape.operations)
         assert are_mats_equivalent(
             qml.matrix(tape, wire_order=range(4)),
@@ -585,9 +583,6 @@ class TestIonize:
             return qml.expval(qml.PauliZ(0) @ qml.PauliX(wires=2))
 
         assert math.allclose(normal_qnode(params), ionized_qnode(params))
-
-        print(normal_qnode.qtape)
-        print(ionized_qnode.qtape)
 
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in ionized_qnode.qtape.operations)
         assert are_mats_equivalent(
