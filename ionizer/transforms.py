@@ -74,6 +74,7 @@ def commute_through_ms_gates(
     .. code::
 
         import pennylane as qml
+        from pennylane import numpy as np
         from functools import partial
 
         dev = qml.device("default.qubit", wires=3)
@@ -162,18 +163,18 @@ def commute_through_ms_gates(
 
 @qml.transform
 def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    r"""A transform that applies RZ gates virtually by adjusting the phase
-    of adjacent GPI and GPI2 gates.
+    r"""Applies :math:`RZ` gates virtually by adjusting the phase of adjacent
+    :math:`GPI` and :math:`GPI2` gates.
 
     This transform reads a circuit from left to right, and applies the
-    following circuit identities (expressed in matrix form)
+    following circuit identities (expressed in matrix order)
 
      - :math:`GPI(x) RZ(z) = GPI(x - z/2)`
      - :math:`GPI2(x) RZ(z) = RZ(z) GPI2(x - z)`
 
-    RZ are pushed as far right as possible, until MS gates are encountered. Any
-    accumulated phase that remains, :math:`RZ(\phi)`, is then implemented using
-    GPI gates according to the identity
+    :math:`RZ` are pushed as far right as possible, until :math:`MS` gates are
+    encountered or the end of the circuit is reached.  Any :math:`RZ(\phi)` that
+    are not absorbed into native gates are then implemented as
 
     .. math:: RZ(\phi) = GPI(0) GPI(-\phi/2).
 
@@ -184,6 +185,38 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @virtualize_rz_gates
+        def circuit():
+            qml.RZ(0.3, wires=0)
+            GPI(0.5, wires=0)
+
+            GPI2(0.2, wires=1)
+            qml.RZ(np.pi/2, wires=1)
+            GPI2(0.4, wires=1)
+            GPI(-np.pi/2, wires=1)
+
+            MS(wires=[0, 1])
+
+            qml.RZ(0.8, wires=1)
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI(0.35)───────────────────────────╭MS────────────────────────┤  Probs
+        1: ──GPI2(0.20)──GPI2(-1.17)──GPI(-2.36)─╰MS──GPI(-0.40)──GPI(0.00)─┤  Probs
+
     """
     list_copy = tape.operations.copy()
     new_operations = []
@@ -272,8 +305,16 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
 @qml.transform
 def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    r"""Perform single-qubit fusion of all sequences of single-qubit gates into
-    no more than three GPI/GPI2 gates.
+    r"""Simplify sequences of :math:`GPI` and :math:`GPI2` gates using gate
+    fusion and circuit identities.
+
+    Any sequence of more than 3 gates will be fused and re-implemented up to
+    global phase using :math:`GPI` and :math:`GPI2` (see
+    :func:`ionizer.utils.extract_gpi2_gpi_gpi2_angles`).
+
+    Sequences of two or three gates (including those obtained through gate
+    fusion) are then checked against the database of known circuit identities
+    for simplifications (see :func:`ionizer.identity_hunter.lookup_gate_identity`).
 
     This transform is based on PennyLane's `single_qubit_fusion
     <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.single_qubit_fusion.html>`_
@@ -286,6 +327,44 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @single_qubit_fusion_gpi
+        def circuit():
+            # Known circuit identity
+            GPI(np.pi/4, wires=0)
+            GPI2(-3 * np.pi/4, wires=0)
+
+            # Already three gates, but no known identity
+            GPI2(0.2, wires=1)
+            GPI2(0.4, wires=1)
+            GPI(-np.pi/2, wires=1)
+
+            # Squished down to three gates
+            GPI2(0.1, wires=2)
+            GPI2(0.2, wires=2)
+            GPI(0.3, wires=2)
+            GPI(0.4, wires=2)
+            GPI2(0.5, wires=2)
+
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI2(0.79)───────────────────────────┤  Probs
+        1: ──GPI2(0.20)───GPI2(0.40)──GPI(-1.57)──┤  Probs
+        2: ──GPI2(-1.57)──GPI(2.65)───GPI2(-0.97)─┤  Probs
+
     """
     # Make a working copy of the list to traverse
     list_copy = tape.operations.copy()
