@@ -20,11 +20,10 @@ The main transform in this module, :func:`ionizer.transforms.ionize`,
 performs end-to-end transpilation and optimization of circuits. It calls a
 number of helper transforms which can also be used individually.
 
-While all transforms should preserve the behaviour of the circuit, they contain
-a mechanism for under-the-hood equivalence checking (up to a global phase)
-through the ``verify_equivalence`` flag. When set, an error will be raised if
-the transpiled circuit is not equivalent to the original. This flag is ``False``
-by default as equivalence is checked at the unitary matrix level. For more details, see
+All transforms contain a mechanism for under-the-hood equivalence checking (up
+to a global phase) through the ``verify_equivalence`` flag. When set, an error
+will be raised if the transpiled circuit is not equivalent to the original. For
+details and example usage see :ref:`basic_usage-equivalence_validation` and
 :func:`ionizer.utils.flag_non_equivalence`.
 
 """
