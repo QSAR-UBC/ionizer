@@ -14,11 +14,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Transforms for transpiling normal gates into trapped-ion gates.
+"""Transforms for transpiling textbook gates into native trapped-ion gates.
 
-The main transform, ``@ionizer.transforms.ionize``, performs a sequence of
-expansions and simplifications of a circuit. The transforms it uses during this
-process can also be called individually.
+The main transform in this module is :func:`ionizer.transforms.ionize`, which
+performs end-to-end transpilation and optimization of circuits. It calls a
+number of helper transforms for various subtasks, which can be used individually.
 
 """
 
@@ -45,23 +45,55 @@ from .transform_utils import (
 def commute_through_ms_gates(
     tape: QuantumTape, direction="right"
 ) -> (Sequence[QuantumTape], Callable):
-    r"""A transform that pushes GPI/GPI2 gates with appropriate (commuting)
-    angles through :class:`~ionizer.ops.MS` gates.
+    r"""A transform that commutes :math:`GPI` and :math:`GPI2` gates with
+    special angle values through :class:`~ionizer.ops.MS` gates.
 
-    More specifically, the following commute through MS gates on either qubit:
-    :math:`GPI2(0)`, :math:`GPI2(\pm \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
+    More specifically, the following gates commute through :math:`MS` gates when
+    applied to either qubit in the :math:`MS`: :math:`GPI2(0)`, :math:`GPI2(\pm
+    \pi)`, :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
+
+    When there are multiple adjacent :math:`MS` gates, commuting :math:`GPI` and
+    :math:`GPI2` gates are pushed as far as possible in the specified direction
+    (see example).
 
     This function is based on PennyLane's `commute_controlled  <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.commute_controlled.html>`_
     transform.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
-        direction (str): Which direction to push the commuting gates in.
+        direction (str): Either ``"right"`` (default) or ``"left"`` to indicate
+            the direction gates should move (from a circuit diagram perspective).
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from functools import partial
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @partial(commute_through_ms_gates, direction="left")
+        def circuit():
+            MS(wires=[0, 1])
+            MS(wires=[1, 2])
+            GPI2(np.pi, wires=0)
+            GPI(0, wires=1)
+            GPI(0.3, wires=2)
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI2(3.14)─╭MS────────────────┤  Probs
+        1: ──GPI(0.00)──╰MS─╭MS────────────┤  Probs
+        2: ─────────────────╰MS──GPI(0.30)─┤  Probs
 
     """
     if direction not in ["left", "right"]:
