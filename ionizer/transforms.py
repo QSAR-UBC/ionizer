@@ -460,14 +460,57 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @partial(convert_to_gpi, exclude_list=["IsingYY"])
+        def circuit():
+            # Gates with known decompositions
+            qml.Hadamard(wires=0)
+            qml.PauliX(wires=1)
+            qml.RX(0.2, wires=2)
+
+            # Should not be decomposed
+            qml.IsingYY(0.1, wires=[0, 1])
+            qml.IsingYY(0.2, wires=[0, 2])
+
+            # Gets expanded into two RY and two CNOT gates, which are then decomposed
+            qml.CRY(0.3, wires=[0, 1])
+
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI(0.00)───GPI2(-1.57)─╭IsingYY(0.10)─╭IsingYY(0.20)──GPI2(1.57)────────────────────────╭MS───GPI2(3.14)──GPI2(-1.57)──GPI2(1.57)─────────────╭MS──GPI2(3.14)──GPI2(-1.57)─┤  Probs
+        1: ──GPI(0.00)───────────────╰IsingYY(0.10)─│───────────────GPI2(3.14)──GPI(0.07)──GPI2(3.14)─╰MS───GPI2(3.14)──GPI2(3.14)───GPI(-0.07)──GPI2(3.14)─╰MS──GPI2(3.14)──────────────┤  Probs
+        2: ──GPI2(1.57)──GPI(-1.47)───GPI2(1.57)────╰IsingYY(0.20)───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  Probs
+
     """
     if exclude_list is None:
         exclude_list = []
 
     new_operations = []
 
+    # We define a custom expansion function here to convert everything except
+    # the gates identified in exclude_list to gates with known decompositions.
+    def stop_at(op):
+        return op.name in decomp_map or op.name in exclude_list
+
+    custom_expand_fn = qml.transforms.create_expand_fn(depth=9, stop_at=stop_at)
+
     with qml.QueuingManager.stop_recording():
-        for op in tape.operations:
+        expanded_tape = custom_expand_fn(tape)
+
+        for op in expanded_tape.operations:
             if op.name not in exclude_list and op.name in decomp_map:
                 if op.num_params > 0:
                     new_operations.extend(decomp_map[op.name](*op.data, op.wires))
@@ -494,12 +537,12 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     ``ionize`` performs the following sequence of passes:
 
-        - Decomposes all operations into Paulis/Pauli rotations, Hadamard, and CNOT
+        - Decomposes all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
         - Merges all single-qubit rotations
-        - Converts everything except RZ to GPI/GPI2/MS gates
-        - Virtually applies all RZ gates
-        - Repeatedly applies gate fusion and commutation through MS gate
-          which performs simplification based on some circuit identities.
+        - Converts everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
+        - Virtually applies :math:`RZ` gates
+        - Repeatedly applies gate fusion and commutation through :math:`MS` gates, and
+          performs simplification based on a database of circuit identities.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
