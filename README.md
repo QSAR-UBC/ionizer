@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
 
-Transpile and optimize your [PennyLane](https://github.com/pennylaneai/pennylane) circuits into
+Transpile and optimize your PennyLane circuits into
 IonQ's native trapped-ion gate set (GPI, GPI2, MS) with just a single extra line
 of code!
 
@@ -34,11 +34,12 @@ The Ionizer is available via PyPI:
 pip install ionizer
 ```
 
-The core requirement is `PennyLane <https://pennylane.ai/>`_ 0.37. Python
-versions 3.10-3.12 are supported and tested.
+The core requirement is [PennyLane](https://pennylane.ai/) 0.37.
+
+Python versions 3.10-3.12 are supported and tested against.
 
 To install from source, clone this repository and use
-[Poetry](https://python-poetry.org/>) to install the dependencies listed in the
+[Poetry](https://python-poetry.org/) to install the dependencies listed in the
 `pyproject.toml` file.
 
 ## Examples
