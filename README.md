@@ -1,7 +1,7 @@
 # The Ionizer
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
-<img src="https://readthedocs.org/projects/ionizer/badge/?version=stable">
+<a href="https://ionizer.readthedocs.io/en/stable/" target="_blank"><img src="https://readthedocs.org/projects/ionizer/badge/?version=stable"></a>
 
 Transpile and optimize your PennyLane circuits into
 IonQ's native trapped-ion gate set (GPI, GPI2, MS) with just a single extra line
