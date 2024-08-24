@@ -117,10 +117,10 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 1000
         assert circuit_json["target"] == "simulator"
 
-        assert circuit_json["body"]["gateset"] == "native"
-        assert circuit_json["body"]["qubits"] == 1
+        assert circuit_json["input"]["gateset"] == "native"
+        assert circuit_json["input"]["qubits"] == 1
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 1
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
         assert circuit_contents[0]["target"] == 0
@@ -138,9 +138,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 1
+        assert circuit_json["input"]["qubits"] == 1
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 3
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
@@ -163,9 +163,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 3
+        assert circuit_json["input"]["qubits"] == 3
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 3
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
@@ -189,9 +189,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 2
+        assert circuit_json["input"]["qubits"] == 2
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 4
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)

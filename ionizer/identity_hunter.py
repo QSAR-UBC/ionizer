@@ -1,6 +1,10 @@
-"""
-Submodule to generate and store a database of circuit identities involving
-up to 3 GPI/GPI2 gates.
+r"""Submodule to generate and store a database of circuit identities involving
+up to three successive :math:`GPI` and :math:`GPI2` gates.
+
+This module is primarily for internal use. It exposes only functions to query the
+database for an identity involving a specified gate sequence. The database is
+included as a set of pickle files with the package.
+
 """
 
 from importlib.resources import files
@@ -9,6 +13,7 @@ from itertools import product
 import pickle
 import numpy as np
 
+import pennylane as qml
 from pennylane import math
 
 from .ops import GPI, GPI2
@@ -55,16 +60,16 @@ def _test_inclusion_in_identity_db(db_subset, single_gates, candidate_angles, ca
     return None, None
 
 
-def generate_gate_identities(single_gates, id_angles, identity_length):
-    """Generates all identities involving specified number of GPI/GPI2 and special angles.
+def _generate_gate_identities(single_gates, id_angles, identity_length):
+    """Generates all identities involving specified angles for a sequence
+    of :math:`GPI` and :math:`GPI2` gates.
 
     Args:
         single_gates (Dict[str, List[Tuple(float, tensor)]]): Dictionary containing
             which gates to generate identities from, along with list of special
             cases of angles/matrices to use in identity generation.
         id_angles (List[float]): Special values of angles used in identity generation.
-        identity_length (int): How long a gate sequence to test. Given gate fusion
-            rules, it makes sense only to have this as value 2 or 3.
+        identity_length (int): How long a gate sequence to test. Must be 2 or 3.
 
     Returns:
         Dict[str, Tuple(Tuple(float), str, float)]: Dictionary of identities
@@ -72,13 +77,11 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
         the angles involved in the identity, the resultant gate, and its argument.
 
     Example:
-        If identity_length=2, an entry in the return dictionary under the key 'GPIGPI2'
-        may have the form
+        If ``identity_length=2``, an example return dictionary with one entry is
 
-            ((0.7853981633974483, -2.356194490192345), 'GPI2', 0.7853981633974483)
+            ``{'GPIGPI2': ((0.7853981633974483, -2.356194490192345), 'GPI2', 0.7853981633974483)}``
 
-        This indicates that the product of GPI(0.785398) GPI2(-2.356194) is a GPI2
-        gate with parameter 0.78539.
+        This represents the equality :math:`GPI(0.785398) GPI2(-2.356194) = GPI2(0.78539)`.
     """
 
     gate_identities = {}
@@ -111,10 +114,13 @@ def generate_gate_identities(single_gates, id_angles, identity_length):
     return gate_identities
 
 
-def generate_gate_identity_database():
-    """Generates all 2- and 3-gate identities involving GPI/GPI2 and special angles.
+def _generate_gate_identity_database():
+    r"""Generates all 2- and 3-gate identities involving :math:`GPI`
+    and :math:`GPI2` and special angles.
 
-    Results are stored in pkl files which can be used later on.
+    Special angles include: :math:`0, \pm \pi/4, \pm \pi/2, \pm 3\pi/4, \pm \pi`.
+
+    Results are stored in ``.pkl`` files which can be used later on.
     """
 
     id_angles = [
@@ -134,8 +140,8 @@ def generate_gate_identity_database():
         "GPI2": [([angle], GPI2.compute_matrix(angle)) for angle in id_angles],
     }
 
-    double_gate_identities = generate_gate_identities(single_gates, id_angles, 2)
-    triple_gate_identities = generate_gate_identities(single_gates, id_angles, 3)
+    double_gate_identities = _generate_gate_identities(single_gates, id_angles, 2)
+    triple_gate_identities = _generate_gate_identities(single_gates, id_angles, 3)
 
     with DOUBLE_IDENTITY_FILE.open("wb") as outfile:
         pickle.dump(double_gate_identities, outfile)
@@ -145,10 +151,27 @@ def generate_gate_identity_database():
 
 
 def lookup_gate_identity(gates):
-    """Given a pair of input gates in the order they come in the circuit,
-    look up if there is a circuit identity in our database. Note that the
-    database is constructed using matrix multiplication so we will need to
-    exchange the order of the gates."""
+    """Given a sequence of two or three single-qubit gates, query a database of
+    known circuit identities for a shorter implementation.
+
+    Args:
+        gates (List[Operation]): A list of two or three ``GPI`` and/or ``GPI2`` operations.
+            These should be ordered as they appear in the circuit diagram.
+
+    Returns:
+        List[Operation]: If an equivalent but shorter sequence of ``GPI`` and ``GPI2`` gates is
+        found in the identity database, this will be returned. If no equivalent sequence
+        is found, the empty list is returned.
+
+    **Example**
+
+    .. code::
+
+        >>> gate_list = [GPI(np.pi / 4, wires=0), GPI2(-3 * np.pi / 4)]
+        >>> lookup_gate_identity(gate_list)
+        [GPI2(0.7853981633974483, wires=[0])]
+
+    """
 
     if len(gates) not in [2, 3]:
         raise ValueError("Currently only 2- and 3-gate circuit identities are supported.")
@@ -166,7 +189,7 @@ def lookup_gate_identity(gates):
                 gate_identities = pickle.load(infile)
         except FileNotFoundError:
             # Generate the file first and then load it
-            generate_gate_identity_database()
+            _generate_gate_identity_database()
             with DOUBLE_IDENTITY_FILE.open("rb") as infile:
                 gate_identities = pickle.load(infile)
     elif len(gates) == 3:
@@ -175,11 +198,13 @@ def lookup_gate_identity(gates):
                 gate_identities = pickle.load(infile)
         except FileNotFoundError:
             # Generate the file first and then load it
-            generate_gate_identity_database()
+            _generate_gate_identity_database()
             with TRIPLE_IDENTITY_FILE.open("rb") as infile:
                 gate_identities = pickle.load(infile)
 
-    # Get the information about this particular combination of gates
+    # Get the information about this particular combination of gates. Note that
+    # the database is constructed using matrix multiplication so we will need to
+    # exchange the order of the gates.
     combo_name = "".join([gate.name for gate in gates[::-1]])
     combo_angles = [float(gate.data[0]) for gate in gates[::-1]]
 
@@ -200,3 +225,88 @@ def lookup_gate_identity(gates):
             return []
 
     return None
+
+
+def search_and_apply_two_gate_identities(gates_to_apply):
+    """Try to simplify a sequence of two gates.
+
+    Sequences that are found are queued to the current context; if no identity
+    is found, we simply queue the provided sequence of gates.
+
+    Args:
+        gates_to_apply (List[pennylane.Operation]): A sequence of two gates
+            we would like to simplify.
+
+    Returns:
+        List[pennylane.Operation]: The simplified or alternate gate sequence that
+        will be applied within the transform.
+    """
+    if len(gates_to_apply) != 2:
+        raise ValueError(
+            "Only sets of 2 gates can be passed to search_and_apply_two_gate_identities"
+        )
+
+    # Make sure the gates share wires
+    if len(qml.wires.Wires.shared_wires([gates_to_apply[0].wires, gates_to_apply[1].wires])) != 1:
+        raise ValueError("Gates must share wires to find identities.")
+
+    # Special case with no fixed angles: GPI2(x) GPI2(x) = GPI(x)
+    if gates_to_apply[0].name == "GPI2" and gates_to_apply[1].name == "GPI2":
+        if qml.math.isclose(gates_to_apply[0].data[0], gates_to_apply[1].data[0]):
+            return [GPI(gates_to_apply[0].data[0], wires=gates_to_apply[0].wires)]
+
+    # Search for non-special identity
+    with qml.QueuingManager.stop_recording():
+        identity_to_apply = lookup_gate_identity(gates_to_apply)
+
+    # If there is an identity, return it; otherwise just return the gates
+    return identity_to_apply if identity_to_apply is not None else gates_to_apply
+
+
+def search_and_apply_three_gate_identities(gates_to_apply):
+    """Try to simplify a sequence of three gates.
+
+    Sequences that are found are queued to the current context; if no identity
+    is found, we simply queue the provided sequence of gates.
+
+    Args:
+        gates_to_apply (List[pennylane.Operation]): A sequence of three gates
+             we would like to simplify.
+
+    Returns:
+        List[pennylane.Operation]: The simplified or alternate gate sequence that
+        will be applied within the transform.
+    """
+    if len(gates_to_apply) != 3:
+        raise ValueError(
+            "Only sets of 3 gates can be passed to search_and_apply_three_gate_identities"
+        )
+
+    # Make sure the gates share wires
+    if len(qml.wires.Wires.shared_wires([gate.wires for gate in gates_to_apply])) != 1:
+        raise ValueError("Gates must share wires to find identities.")
+
+    # First, check if we can apply an identity to all three gates
+    with qml.QueuingManager.stop_recording():
+        three_gate_identity_to_apply = lookup_gate_identity(gates_to_apply)
+
+    if three_gate_identity_to_apply is not None:
+        return three_gate_identity_to_apply
+
+    # If we can't apply a 3-gate identity, see if there is a 2-gate one on the
+    # first two gates.
+    with qml.QueuingManager.stop_recording():
+        identity_to_apply = search_and_apply_two_gate_identities(gates_to_apply[:2])
+
+    if identity_to_apply is not None:
+        if len(identity_to_apply) < 2:
+            return identity_to_apply + [gates_to_apply[2]]
+
+    # If not, apply the first gate, then check if there is anything to be
+    # done between the second and third.
+    identity_to_apply = search_and_apply_two_gate_identities(gates_to_apply[1:])
+    if identity_to_apply is not None:
+        if len(identity_to_apply) < 2:
+            return [gates_to_apply[0]] + identity_to_apply
+
+    return gates_to_apply

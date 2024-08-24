@@ -14,12 +14,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Transforms for transpiling normal gates into trapped-ion gates.
+"""Transforms for transpiling textbook gates into native trapped-ion gates.
 
-The main transform, @ionizer.transforms.ionize, will perform a full sequence of
-expansions and simplifications of the tape. The transforms it uses during this
-process can also be called individually.
+The main transform in this module, :func:`ionizer.transforms.ionize`,
+performs end-to-end transpilation and optimization of circuits. It calls a
+number of helper transforms which can also be used individually.
+
 """
 
 from typing import Sequence, Callable
@@ -35,7 +35,7 @@ from pennylane.transforms.optimization.optimization_utils import find_next_gate
 from .utils import rescale_angles, extract_gpi2_gpi_gpi2_angles
 from .decompositions import decomp_map
 from .ops import GPI, GPI2
-from .transform_utils import (
+from .identity_hunter import (
     search_and_apply_two_gate_identities,
     search_and_apply_three_gate_identities,
 )
@@ -45,23 +45,57 @@ from .transform_utils import (
 def commute_through_ms_gates(
     tape: QuantumTape, direction="right"
 ) -> (Sequence[QuantumTape], Callable):
-    """Apply a transform that passes through a tape and pushes GPI/GPI2
-    gates with appropriate (commuting) angles through MS gates.
+    r"""Commute :math:`GPI` and :math:`GPI2` gates with special angle values
+    through :class:`~ionizer.ops.MS` gates.
 
-    More specifically, the following commute through MS gates on either qubit:
-        GPI2(0), GPI2(π), GPI2(-π), GPI(0), GPI(π), GPI(-π)
+    The following gates commute with :math:`MS` gates when applied to either
+    qubit in the :math:`MS` gate: :math:`GPI2(0)`, :math:`GPI2(\pm \pi)`,
+    :math:`GPI(0)`, :math:`GPI(\pm \pi)`.
 
-    This function is modelled off PennyLane's commute_controlled transform
-    https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.commute_controlled.html
+    When there are multiple adjacent :math:`MS` gates, commuting :math:`GPI` and
+    :math:`GPI2` gates are pushed as far as possible in the specified direction
+    (see example).
+
+    This function is based on PennyLane's `commute_controlled  <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.commute_controlled.html>`_
+    transform.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
-        direction (str): Which direction to push the commuting gates in.
+        direction (str): Either ``"right"`` (default) or ``"left"`` to indicate
+            the direction gates should move (from a circuit diagram perspective).
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+        from functools import partial
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @partial(commute_through_ms_gates, direction="left")
+        def circuit():
+            MS(wires=[0, 1])
+            MS(wires=[1, 2])
+            GPI2(np.pi, wires=0)
+            GPI(0, wires=1)
+            GPI(0.3, wires=2)
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI2(3.14)─╭MS────────────────┤  Probs
+        1: ──GPI(0.00)──╰MS─╭MS────────────┤  Probs
+        2: ─────────────────╰MS──GPI(0.30)─┤  Probs
+
     """
     if direction not in ["left", "right"]:
         raise ValueError(
@@ -129,16 +163,20 @@ def commute_through_ms_gates(
 
 @qml.transform
 def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """When dealing with GPI/GPI2/MS gates, RZ gates can be implemented virtually
-    by pushing them through such gates and simply adjusting the phases of the
-    gates we pushed them through:
-        - GPI(x) RZ(z) = GPI(x - z/2)
-        - RZ(z) GPI(x) = GPI(x + z/2)
-        - GPI2(x) RZ(z) = RZ(z) GPI2(x - z)
-        - RZ(z) GPI2(x) = GPI2(x + z) RZ(z)
+    r"""Apply :math:`RZ` gates virtually by adjusting the phase of adjacent
+    :math:`GPI` and :math:`GPI2` gates.
 
-    This transform rolls through a tape, and adjusts the circuits so that
-    all the RZs get implemented virtually.
+    This transform reads a circuit from left to right, and applies the
+    following circuit identities (expressed in matrix order):
+
+     - :math:`GPI(x) RZ(z) = GPI(x - z/2)`
+     - :math:`GPI2(x) RZ(z) = RZ(z) GPI2(x - z)`
+
+    :math:`RZ` are pushed as far right as possible, until :math:`MS` gates are
+    encountered or the end of the circuit is reached.  Any :math:`RZ(\phi)` that
+    are not absorbed into native gates are then implemented as
+
+    .. math:: RZ(\phi) = GPI(0) GPI(-\phi/2).
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -147,6 +185,38 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @virtualize_rz_gates
+        def circuit():
+            qml.RZ(0.3, wires=0)
+            GPI(0.5, wires=0)
+
+            GPI2(0.2, wires=1)
+            qml.RZ(np.pi/2, wires=1)
+            GPI2(0.4, wires=1)
+            GPI(-np.pi/2, wires=1)
+
+            MS(wires=[0, 1])
+
+            qml.RZ(0.8, wires=1)
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI(0.35)───────────────────────────╭MS────────────────────────┤  Probs
+        1: ──GPI2(0.20)──GPI2(-1.17)──GPI(-2.36)─╰MS──GPI(-0.40)──GPI(0.00)─┤  Probs
+
     """
     list_copy = tape.operations.copy()
     new_operations = []
@@ -235,11 +305,20 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
 @qml.transform
 def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """Perform single-qubit fusion of all sequences of single-qubit gates into
-    no more than 3 GPI/GPI2 gates.
+    r"""Simplify sequences of :math:`GPI` and :math:`GPI2` gates using gate
+    fusion and circuit identities.
 
-    This transform is based on PennyLane's single_qubit_fusion transform.
-    https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.single_qubit_fusion.html
+    Any sequence of more than 3 gates will be fused and re-implemented up to
+    global phase using :math:`GPI` and :math:`GPI2` (see
+    :func:`ionizer.utils.extract_gpi2_gpi_gpi2_angles`).
+
+    Sequences of two or three gates (including those obtained through gate
+    fusion) are then checked against the database of known circuit identities
+    for simplifications (see :func:`ionizer.identity_hunter.lookup_gate_identity`).
+
+    This transform is based on PennyLane's `single_qubit_fusion
+    <https://docs.pennylane.ai/en/stable/code/api/pennylane.transforms.single_qubit_fusion.html>`_
+    transform.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -248,6 +327,44 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @single_qubit_fusion_gpi
+        def circuit():
+            # Known circuit identity
+            GPI(np.pi/4, wires=0)
+            GPI2(-3 * np.pi/4, wires=0)
+
+            # Already three gates, but no known identity
+            GPI2(0.2, wires=1)
+            GPI2(0.4, wires=1)
+            GPI(-np.pi/2, wires=1)
+
+            # Squished down to three gates
+            GPI2(0.1, wires=2)
+            GPI2(0.2, wires=2)
+            GPI(0.3, wires=2)
+            GPI(0.4, wires=2)
+            GPI2(0.5, wires=2)
+
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI2(0.79)───────────────────────────┤  Probs
+        1: ──GPI2(0.20)───GPI2(0.40)──GPI(-1.57)──┤  Probs
+        2: ──GPI2(-1.57)──GPI(2.65)───GPI2(-0.97)─┤  Probs
+
     """
     # Make a working copy of the list to traverse
     list_copy = tape.operations.copy()
@@ -329,10 +446,7 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 @qml.transform
 def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
-    """Transpile a tape directly to native trapped ion gates.
-
-    Any operation without a decomposition in decompositions.py will remain
-    as-is.
+    r"""Transpile desired gates in a circuit to trapped-ion gates.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -343,14 +457,57 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from pennylane import numpy as np
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @partial(convert_to_gpi, exclude_list=["IsingYY"])
+        def circuit():
+            # Gates with known decompositions
+            qml.Hadamard(wires=0)
+            qml.PauliX(wires=1)
+            qml.RX(0.2, wires=2)
+
+            # Should not be decomposed
+            qml.IsingYY(0.1, wires=[0, 1])
+            qml.IsingYY(0.2, wires=[0, 2])
+
+            # Gets expanded into two RY and two CNOT gates, which are then decomposed
+            qml.CRY(0.3, wires=[0, 1])
+
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ──GPI(0.00)───GPI2(-1.57)─╭IsingYY(0.10)─╭IsingYY(0.20)──GPI2(1.57)────────────────────────╭MS───GPI2(3.14)──GPI2(-1.57)──GPI2(1.57)─────────────╭MS──GPI2(3.14)──GPI2(-1.57)─┤  Probs
+        1: ──GPI(0.00)───────────────╰IsingYY(0.10)─│───────────────GPI2(3.14)──GPI(0.07)──GPI2(3.14)─╰MS───GPI2(3.14)──GPI2(3.14)───GPI(-0.07)──GPI2(3.14)─╰MS──GPI2(3.14)──────────────┤  Probs
+        2: ──GPI2(1.57)──GPI(-1.47)───GPI2(1.57)────╰IsingYY(0.20)───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  Probs
+
     """
     if exclude_list is None:
         exclude_list = []
 
     new_operations = []
 
+    # We define a custom expansion function here to convert everything except
+    # the gates identified in exclude_list to gates with known decompositions.
+    def stop_at(op):
+        return op.name in decomp_map or op.name in exclude_list
+
+    custom_expand_fn = qml.transforms.create_expand_fn(depth=9, stop_at=stop_at)
+
     with qml.QueuingManager.stop_recording():
-        for op in tape.operations:
+        expanded_tape = custom_expand_fn(tape)
+
+        for op in expanded_tape.operations:
             if op.name not in exclude_list and op.name in decomp_map:
                 if op.num_params > 0:
                     new_operations.extend(decomp_map[op.name](*op.data, op.wires))
@@ -372,16 +529,18 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 
 @qml.transform
 def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
-    """A full set of transpilation passes to apply to convert the circuit
-    into native gates and optimize it.
+    r"""Apply a sequence of passes to transpile and optimize a circuit
+    over the trapped-ion gate set :math:`GPI`, :math:`GPI2`, and :math:`MS`.
 
-    It performs the following sequence of steps:
-        - Decomposes all operations into Paulis/Pauli rotations, Hadamard, and CNOT
-        - Merges all single-qubit rotations
-        - Converts everything except RZ to GPI/GPI2/MS gates
-        - Virtually applies all RZ gates
-        - Repeatedly applies gate fusion and commutation through MS gate
-          which performs simplification based on some circuit identities.
+    The following sequence of passes is performed:
+
+        - Decompose all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
+        - Cancel inverses and merge single-qubit rotations
+        - Convert everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
+        - Virtually apply :math:`RZ` gates
+        - Repeatedly apply single-qubit gate fusion and commutation through
+          :math:`MS` gates, and perform simplification based on a database of
+          circuit identities.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
@@ -390,9 +549,34 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
         function]: The transformed circuit as described in :func:`qml.transform
         <pennylane.transform>`.
+
+    **Example**
+
+    .. code::
+
+        import pennylane as qml
+        from ionizer.transforms import ionize
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        @ionize
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.PauliX(wires=1)
+            qml.RX(0.2, wires=2)
+            qml.CRY(0.3, wires=[0, 1])
+            return qml.probs()
+
+    .. code::
+
+        >>> qml.draw(circuit)()
+        0: ─────────────────────────────────────╭MS──────────────────────────────────────╭MS──GPI2(-1.57)─┤  Probs
+        1: ──GPI2(1.57)──GPI(-0.86)──GPI2(1.42)─╰MS──GPI2(-1.57)──GPI(2.43)──GPI2(-1.42)─╰MS──────────────┤  Probs
+        2: ──GPI2(1.57)──GPI(-1.47)──GPI2(1.57)───────────────────────────────────────────────────────────┤  Probs
+
     """
 
-    # The tape will first be expanded into known operations
     def stop_at(op):
         return op.name in decomp_map
 
@@ -401,10 +585,12 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     with qml.QueuingManager.stop_recording():
         # Initial set of passes to decompose and translate the tape and virtualize RZ
         optimized_tape = custom_expand_fn(tape)
+        optimized_tape, _ = qml.transforms.cancel_inverses(optimized_tape)
         optimized_tape, _ = qml.transforms.merge_rotations(optimized_tape)
         optimized_tape, _ = partial(convert_to_gpi, exclude_list=["RZ"])(optimized_tape[0])
         optimized_tape, _ = virtualize_rz_gates(optimized_tape[0])
 
+        # Actual optimization passes
         # TODO: how many iterations do we actually have to do?
         for _ in range(5):
             optimized_tape, _ = partial(commute_through_ms_gates, direction="left")(
