@@ -9,7 +9,7 @@ from pennylane import math
 import numpy as np
 
 from ionizer.utils import are_mats_equivalent
-from ionizer.transform_utils import (
+from ionizer.identity_hunter import (
     search_and_apply_two_gate_identities,
     search_and_apply_three_gate_identities,
 )

@@ -35,7 +35,7 @@ from pennylane.transforms.optimization.optimization_utils import find_next_gate
 from .utils import rescale_angles, extract_gpi2_gpi_gpi2_angles
 from .decompositions import decomp_map
 from .ops import GPI, GPI2
-from .transform_utils import (
+from .identity_hunter import (
     search_and_apply_two_gate_identities,
     search_and_apply_three_gate_identities,
 )
