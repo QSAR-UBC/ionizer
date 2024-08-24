@@ -1,6 +1,7 @@
 # The Ionizer
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
+<a href="https://ionizer.readthedocs.io/en/stable/" target="_blank"><img src="https://readthedocs.org/projects/ionizer/badge/?version=stable"></a>
 
 Transpile and optimize your PennyLane circuits into
 IonQ's native trapped-ion gate set (GPI, GPI2, MS) with just a single extra line
@@ -45,7 +46,7 @@ To install from source, clone this repository and use
 ## Examples
 
 For more detailed explanations and usage examples, please check the full
-online documentation.
+[online documentation](https://ionizer.readthedocs.io/en/stable/).
 
 The Ionizer is implemented using [quantum function
 transforms](https://arxiv.org/abs/2202.13414), similar to PennyLane's [existing
@@ -151,10 +152,10 @@ If you use the Ionizer as part of your workflow, we would appreciate if you cite
 @software{di_matteo_2024_10761367,
   author       = {Di Matteo, Olivia},
   title        = {The Ionizer},
-  month        = mar,
+  month        = aug,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.2},
+  version      = {0.3},
   doi          = {10.5281/zenodo.10761367},
   url          = {https://doi.org/10.5281/zenodo.10761367}
 }
