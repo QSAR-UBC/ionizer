@@ -2,8 +2,8 @@ r"""Submodule to generate and store a database of circuit identities involving
 up to three successive :math:`GPI` and :math:`GPI2` gates.
 
 This module is primarily for internal use, and exposes only a function to query
-the database for an identity involving the desired gate sequence. The database
-itself is included as a set of pickle files with the package.
+the database for an identity involving a specified gate sequence. The database
+is included as a set of pickle files with the package.
 
 """
 
@@ -150,10 +150,8 @@ def _generate_gate_identity_database():
 
 
 def lookup_gate_identity(gates):
-    """Given a sequence of input gates, query a database of known circuit
-    identities for a shorter implementation.
-
-    The database is included with the Ionizer package.
+    """Given a sequence of two or three single-qubit gates, query a database of
+    known circuit identities for a shorter implementation.
 
     Args:
         gates (List[Operation]): A list of two or three ``GPI`` and/or ``GPI2`` operations.
@@ -163,6 +161,14 @@ def lookup_gate_identity(gates):
         List[Operation]: If an equivalent but shorter sequence of ``GPI`` and ``GPI2`` gates is
         found in the identity database, this will be returned. If no equivalent sequence
         is found, the empty list is returned.
+
+    **Example**
+
+    .. code::
+
+        >>> gate_list = [GPI(np.pi/4, wires=0), GPI2(-3*np.pi/4)]
+        >>> lookup_gate_identity(gate_list)
+        [GPI2(0.7853981633974483, wires=[0])]        
 
     """
 
