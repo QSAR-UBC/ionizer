@@ -152,10 +152,10 @@ If you use the Ionizer as part of your workflow, we would appreciate if you cite
 @software{di_matteo_2024_10761367,
   author       = {Di Matteo, Olivia},
   title        = {The Ionizer},
-  month        = mar,
+  month        = aug,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.2},
+  version      = {0.3},
   doi          = {10.5281/zenodo.10761367},
   url          = {https://doi.org/10.5281/zenodo.10761367}
 }
