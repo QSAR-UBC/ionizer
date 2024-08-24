@@ -533,15 +533,15 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 @qml.transform
 def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     r"""Apply a sequence of passes to transpile and optimize a circuit
-    over the trapped-ion gate set GPI, GPI2, and MS.
+    over the trapped-ion gate set :math:`GPI`, :math:`GPI2`, and :math:`MS`.
 
-    ``ionize`` performs the following sequence of passes:
+    The following sequence of passes is performed:
 
-        - Decomposes all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
-        - Merges all single-qubit rotations
-        - Converts everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
-        - Virtually applies :math:`RZ` gates
-        - Repeatedly applies gate fusion and commutation through :math:`MS` gates, and
+        - Decompose all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
+        - Cancel inverses and merge single-qubit rotations
+        - Convert everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
+        - Virtually apply :math:`RZ` gates
+        - Repeatedly apply gate fusion and commutation through :math:`MS` gates, and
           performs simplification based on a database of circuit identities.
 
     Args:
@@ -554,7 +554,6 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     """
 
-    # The tape will first be expanded into known operations
     def stop_at(op):
         return op.name in decomp_map
 
@@ -563,10 +562,12 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     with qml.QueuingManager.stop_recording():
         # Initial set of passes to decompose and translate the tape and virtualize RZ
         optimized_tape = custom_expand_fn(tape)
+        optimized_tape, _ = qml.transforms.cancel_inverses(optimized_tape)
         optimized_tape, _ = qml.transforms.merge_rotations(optimized_tape)
         optimized_tape, _ = partial(convert_to_gpi, exclude_list=["RZ"])(optimized_tape[0])
         optimized_tape, _ = virtualize_rz_gates(optimized_tape[0])
 
+        # Actual optimization passes
         # TODO: how many iterations do we actually have to do?
         for _ in range(5):
             optimized_tape, _ = partial(commute_through_ms_gates, direction="left")(
