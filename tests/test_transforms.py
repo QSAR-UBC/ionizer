@@ -475,7 +475,8 @@ class TestConvertToGPI:
 class TestIonize:
     """Integration test for full ionize transform."""
 
-    def test_ionize_tape(self):
+    @pytest.mark.parametrize("verify_equivalence", [True, False])
+    def test_ionize_tape(self, verify_equivalence):
         """Test ionize transform on a single tape."""
 
         def qfunc():
@@ -490,7 +491,7 @@ class TestIonize:
 
         tape = qml.tape.make_qscript(qfunc)()
 
-        transformed_qfunc = ionize(qfunc)
+        transformed_qfunc = ionize(qfunc, verify_equivalence=verify_equivalence)
         transformed_tape = qml.tape.make_qscript(transformed_qfunc)()
 
         print(transformed_tape.operations)
@@ -501,7 +502,8 @@ class TestIonize:
             qml.matrix(transformed_tape, wire_order=range(4)),
         )
 
-    def test_ionize_qnode(self):
+    @pytest.mark.parametrize("verify_equivalence", [True, False])
+    def test_ionize_qnode(self, verify_equivalence):
         """Test ionize transform on a QNode."""
         dev = qml.device("default.qubit", wires=5)
 
@@ -519,7 +521,7 @@ class TestIonize:
             return qml.expval(qml.PauliX(0) @ qml.PauliY(wires=1))
 
         @qml.qnode(dev)
-        @ionize
+        @partial(ionize, verify_equivalence=verify_equivalence)
         def ionized_qnode():
             quantum_function()
             return qml.expval(qml.PauliX(0) @ qml.PauliY(wires=1))
@@ -532,6 +534,7 @@ class TestIonize:
             qml.matrix(ionized_qnode, wire_order=range(4))(),
         )
 
+    @pytest.mark.parametrize("verify_equivalence", [True, False])
     @pytest.mark.parametrize(
         "params",
         [
@@ -541,7 +544,7 @@ class TestIonize:
             np.array([-0.54, 0.68, 0.11]),
         ],
     )
-    def test_ionize_parametrized_qnode(self, params):
+    def test_ionize_parametrized_qnode(self, params, verify_equivalence):
         """Test ionize transform on a QNode."""
         dev = qml.device("default.qubit", wires=5)
 
@@ -560,13 +563,16 @@ class TestIonize:
             return qml.expval(qml.PauliZ(0) @ qml.PauliX(wires=2))
 
         @qml.qnode(dev)
-        @ionize
+        @partial(ionize, verify_equivalence=verify_equivalence)
         def ionized_qnode(params):
             quantum_function(params)
             return qml.expval(qml.PauliZ(0) @ qml.PauliX(wires=2))
 
         assert math.allclose(normal_qnode(params), ionized_qnode(params))
 
+        print(normal_qnode.qtape)
+        print(ionized_qnode.qtape)
+        
         assert all(op.name in ["GPI", "GPI2", "MS"] for op in ionized_qnode.qtape.operations)
         assert are_mats_equivalent(
             qml.matrix(normal_qnode, wire_order=range(4))(params),
