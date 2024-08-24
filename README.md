@@ -1,6 +1,7 @@
 # The Ionizer
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
+<a href="https://ionizer--22.org.readthedocs.build/en/22/"><img src="https://readthedocs.org/projects/ionizer/docs/badge/?version=latest /></a>
 
 Transpile and optimize your PennyLane circuits into
 IonQ's native trapped-ion gate set (GPI, GPI2, MS) with just a single extra line
@@ -54,7 +55,7 @@ tools](https://docs.pennylane.ai/en/stable/introduction/compiling_circuits.html)
 compile and execute the circuit using trapped ion gates, the
 `@ionize` transform will
 
- - Decompose all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
+ - Decompose all operations into Paulis/Pauli rotations, Hadamard, and CNOT
  - Cancel inverses and merge single-qubit rotations
  - Convert everything except RZ to GPI, GPI2, and MS gates
  - Virtually apply RZ gates
@@ -99,8 +100,7 @@ tensor(0.99500417, requires_grad=True)
 
 ```
 
-Note that while this comes packaged together as the `@ionize` transform, the
-individual transforms can also be accessed and used independently.
+The consistuent transforms can also be accessed and used independently.
 
 There is currently not direct support for other frameworks. However, if you
 would like to apply the transforms to Qiskit circuits, this can be accomplished
