@@ -16,7 +16,7 @@
 # limitations under the License.
 """Transforms for transpiling textbook gates into native trapped-ion gates.
 
-The main transform in this module, :func:`ionizer.transforms.ionize`, 
+The main transform in this module, :func:`ionizer.transforms.ionize`,
 performs end-to-end transpilation and optimization of circuits. It calls a
 number of helper transforms which can also be used individually.
 
@@ -537,7 +537,7 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
         - Decompose all operations into Paulis/Pauli rotations, Hadamard, and :math:`CNOT`
         - Cancel inverses and merge single-qubit rotations
         - Convert everything except :math:`RZ` to :math:`GPI`, :math:`GPI2`, and :math:`MS` gates
-        - Virtually apply :math:`RZ` gates   
+        - Virtually apply :math:`RZ` gates
         - Repeatedly apply single-qubit gate fusion and commutation through
           :math:`MS` gates, and perform simplification based on a database of
           circuit identities.

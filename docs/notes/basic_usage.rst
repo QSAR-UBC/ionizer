@@ -124,4 +124,3 @@ constructed:
        1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-2.11)──GPI2(1.57)─┤ ╰<Z@Z>
 
        Gradient from transpiled tape execution = -0.479425538604203
-

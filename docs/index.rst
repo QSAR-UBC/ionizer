@@ -40,7 +40,7 @@ Reference
 ---------
 
 The Ionizer is developed and maintained by the `Quantum Software and Algorithms
-Research Lab <https://glassnotes.github.io/qsar.html>` at UBC. 
+Research Lab <https://glassnotes.github.io/qsar.html>` at UBC.
 
 If you use the Ionizer as part of your project, we would appreciate if you cite
 it using the BibTeX below.

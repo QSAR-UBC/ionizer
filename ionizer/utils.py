@@ -38,7 +38,7 @@ def are_mats_equivalent(unitary1, unitary2):
     .. code::
 
         >>> matrix_T = np.diag([1, 1j])
-        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi/4), np.exp(1j * np.pi/4)])
+        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi / 4), np.exp(1j * np.pi / 4)])
         >>> are_mats_equivalent(matrix_T, matrix_RZ)
         True
     """
@@ -117,11 +117,13 @@ def extract_gpi2_gpi_gpi2_angles(unitary):
 
     .. code::
 
-        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi/4), np.exp(1j * np.pi/4)])
+        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi / 4), np.exp(1j * np.pi / 4)])
         >>> angles = extract_gpi2_gpi_gpi2_angles(matrix_RZ)
         >>> angles
         [ 2.35619449  3.14159265 -2.35619449]
-        >>> recovered_matrix = np.linalg.multi_dot([op.compute_matrix(angle) for op, angle in zip([GPI2, GPI, GPI2], angles[::-1])])
+        >>> recovered_matrix = np.linalg.multi_dot(
+        ...     [op.compute_matrix(angle) for op, angle in zip([GPI2, GPI, GPI2], angles[::-1])]
+        ... )
         >>> are_mats_equivalent(matrix_RZ, recovered_matrix)
         True
 

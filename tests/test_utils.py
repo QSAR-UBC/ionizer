@@ -202,5 +202,3 @@ class TestConvertToJSON:
         assert circuit_contents[2]["target"] == 1
         assert circuit_contents[3]["phases"] == [0, 0]
         assert circuit_contents[3]["targets"] == [1, 0]
-
-        
