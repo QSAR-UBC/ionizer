@@ -17,6 +17,7 @@
 """
 Test the decompositions of standard operations in to the {GPI, GPI2, MS} gate set.
 """
+
 import pytest
 
 import pennylane as qml
@@ -43,10 +44,18 @@ parametrized_ops = [
 
 single_qubit_unitaries = [
     (np.eye(2), []),
-    (np.array([[0.0, 0.54030231 - 0.84147098j], [0.54030231 + 0.84147098j, 0.0]]), ["GPI"]),
+    (
+        np.array([[0.0, 0.54030231 - 0.84147098j], [0.54030231 + 0.84147098j, 0.0]]),
+        ["GPI"],
+    ),
     (qml.RZ.compute_matrix(0.2), ["GPI", "GPI"]),
     (
-        np.array([[0.70710678, -0.59500984 - 0.38205142j], [0.59500984 - 0.38205142j, 0.70710678]]),
+        np.array(
+            [
+                [0.70710678, -0.59500984 - 0.38205142j],
+                [0.59500984 - 0.38205142j, 0.70710678],
+            ]
+        ),
         ["GPI2"],
     ),
     (qml.RY.compute_matrix(1.0), ["GPI2", "GPI", "GPI2"]),
@@ -79,7 +88,9 @@ class TestDecompositions:
     def test_non_parametric_decompositions(self, gate, decomp_function):
         """Test decompositions of non-parametric operations."""
         expected_mat = gate.compute_matrix()
-        obtained_mat = qml.matrix(decomp_function)(wires=range(gate.num_wires))
+        obtained_mat = qml.matrix(decomp_function, wire_order=range(gate.num_wires))(
+            wires=range(gate.num_wires)
+        )
         mat_product = qml.math.dot(expected_mat, qml.math.conj(qml.math.T(obtained_mat)))
         mat_product = mat_product / mat_product[0, 0]
         assert qml.math.allclose(mat_product, qml.math.eye(mat_product.shape[0]))
@@ -91,15 +102,17 @@ class TestDecompositions:
     def test_parametric_decompositions(self, gate, decomp_function, angle):
         """Test decompositions of parametric operations."""
         expected_mat = gate.compute_matrix(angle)
-        obtained_mat = qml.matrix(decomp_function)(angle, wires=range(gate.num_wires))
+        obtained_mat = qml.matrix(decomp_function, wire_order=range(gate.num_wires))(
+            angle, wires=range(gate.num_wires)
+        )
         mat_product = qml.math.dot(expected_mat, qml.math.conj(qml.math.T(obtained_mat)))
         mat_product = mat_product / mat_product[0, 0]
         assert qml.math.allclose(mat_product, qml.math.eye(mat_product.shape[0]))
 
-    @pytest.mark.parametrize("U, decomp_list", single_qubit_unitaries)
-    def test_single_qubit_unitary_decomposition(self, U, decomp_list):
+    @pytest.mark.parametrize("unitary, decomp_list", single_qubit_unitaries)
+    def test_single_qubit_unitary_decomposition(self, unitary, decomp_list):
         """Test decompositions of single-qubit unitary matrices."""
-        obtained_decomp_list = gpi_single_qubit_unitary(U, [0])
+        obtained_decomp_list = gpi_single_qubit_unitary(unitary, [0])
 
         assert all(
             op.name == expected_name for op, expected_name in zip(obtained_decomp_list, decomp_list)
@@ -110,7 +123,7 @@ class TestDecompositions:
                 for op in obtained_decomp_list:
                     qml.apply(op)
 
-            obtained_matrix = qml.matrix(tape)
-            mat_product = math.dot(obtained_matrix, math.conj(math.T(U)))
+            obtained_matrix = qml.matrix(tape, wire_order=tape.wires)
+            mat_product = math.dot(obtained_matrix, math.conj(math.T(unitary)))
             mat_product = mat_product / mat_product[0, 0]
             assert math.allclose(mat_product, math.eye(2))

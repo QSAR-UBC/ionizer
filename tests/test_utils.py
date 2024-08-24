@@ -1,7 +1,10 @@
 """
 Test utility functions.
 """
+
 import pytest
+
+from functools import partial
 
 import numpy as np
 import pennylane as qml
@@ -10,28 +13,148 @@ from pennylane import math
 from ionizer.ops import GPI, GPI2, MS
 from ionizer.utils import (
     are_mats_equivalent,
+    flag_non_equivalence,
     rescale_angles,
     extract_gpi2_gpi_gpi2_angles,
     tape_to_json,
 )
 
-from test_decompositions import single_qubit_unitaries
+from test_decompositions import single_qubit_unitaries  # pylint: disable=wrong-import-order
 
 
-class TestMatrixEquivalence:
-    """Test utility function for matrix equivalence checking."""
+@qml.transform
+def add_bad_gates(tape, verify_equivalence=False):
+    """A transform that behaves incorrectly.
+
+    Used to test the equivalence checking mechanism. Since all our
+    implemented transforms preserve equivalence, we create this "bad" transform,
+    which has the same structure as the others, to validate that an error is
+    raised when the transformed circuit is not equivalent.
+    """
+
+    new_operations = []
+    for op in tape.operations:
+        new_operations.append(op)
+        new_operations.append(op)
+
+    new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
+
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
+    def null_postprocessing(results):
+        return results[0]
+
+    return [new_tape], null_postprocessing
+
+
+class TestEquivalenceMechanism:
+
+    def test_equivalence_tape(self):
+        """Test that non-equivalence is correctly detected when a transform is
+        applied to tapes."""
+
+        with qml.tape.QuantumTape() as tape:
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+
+        # Will pass without issue
+        add_bad_gates(tape)
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            _ = partial(add_bad_gates, verify_equivalence=True)(tape)
+
+    def test_equivalence_qfunc(self):
+        """Test that non-equivalence is correctly detected for quantum
+        function transforms."""
+
+        def qfunc():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        transformed_qfunc = add_bad_gates(qfunc)
+        _ = qml.tape.make_qscript(transformed_qfunc)()
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            transformed_qfunc = partial(add_bad_gates, verify_equivalence=True)(qfunc)
+            _ = qml.tape.make_qscript(transformed_qfunc)()
+
+    def test_equivalence_qnode(self):
+        """Test that non-equivalence is correctly detected for transforms applied to QNodes."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        # Will pass without issue; note that the QNode must be called for the
+        # transform to execute.
+        transformed_qnode = add_bad_gates(circuit)
+        transformed_qnode()
+
+        with pytest.raises(ValueError, match="not equivalent after transform"):
+            transformed_qnode = partial(add_bad_gates, verify_equivalence=True)(circuit)
+            transformed_qnode()
+
+    def test_equivalence_qnode_default(self):
+        """Test that non-equivalence is not detected if we do not add the flag
+        in the decorator."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @add_bad_gates
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        circuit()
+
+    @pytest.mark.parametrize("verify_equivalence", [True, False])
+    def test_equivalence_composition(self, verify_equivalence):
+        """Test that non-equivalence is correctly detected for a bad transform applied
+        before a good one in a QNode."""
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @partial(add_bad_gates, verify_equivalence=verify_equivalence)
+        @qml.transforms.cancel_inverses
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs(wires=[0, 1])
+
+        if verify_equivalence is True:
+            with pytest.raises(ValueError, match="not equivalent after transform"):
+                circuit()
+        else:
+            circuit()
+
+
+class TestMatrixAngleUtilities:
+    """Test utility functions for matrix and angle manipulations."""
 
     @pytest.mark.parametrize(
         "mat1, mat2",
         [
             (np.eye(2), 1j * np.eye(2)),
-            (qml.PauliX.compute_matrix(), np.exp(1j * np.pi / 2) * qml.PauliX.compute_matrix()),
-            (qml.SX.compute_matrix(), np.exp(-1j * np.pi / 2) * qml.SX.compute_matrix()),
+            (
+                qml.PauliX.compute_matrix(),
+                np.exp(1j * np.pi / 2) * qml.PauliX.compute_matrix(),
+            ),
+            (
+                qml.SX.compute_matrix(),
+                np.exp(-1j * np.pi / 2) * qml.SX.compute_matrix(),
+            ),
             (qml.Hadamard.compute_matrix(), -qml.Hadamard.compute_matrix()),
         ],
     )
     def test_equivalent_matrices(self, mat1, mat2):
-        """Test that we correcty identify matrices that are equivalent
+        """Test that we correctly identify matrices that are equivalent
         up to a global phase."""
         assert are_mats_equivalent(mat1, mat2)
 
@@ -44,13 +167,9 @@ class TestMatrixEquivalence:
         ],
     )
     def test_inequivalent_matrices(self, mat1, mat2):
-        """Test that we correcty identify matrices that are equivalent
+        """Test that we correctly identify matrices that are equivalent
         up to a global phase."""
         assert not are_mats_equivalent(mat1, mat2)
-
-
-class TestRescaleAngles:
-    """Test utility function for rescaling of angles."""
 
     @pytest.mark.parametrize(
         "angles,rescaled_angles",
@@ -59,7 +178,10 @@ class TestRescaleAngles:
             (np.pi, np.pi),
             (-np.pi / 2, -np.pi / 2),
             (3 * np.pi / 2, -np.pi / 2),
-            (np.array([np.pi / 2, 5 * np.pi / 4]), np.array([np.pi / 2, -3 * np.pi / 4])),
+            (
+                np.array([np.pi / 2, 5 * np.pi / 4]),
+                np.array([np.pi / 2, -3 * np.pi / 4]),
+            ),
         ],
     )
     def test_rescale_angles(self, angles, rescaled_angles):
@@ -84,21 +206,17 @@ class TestRescaleAngles:
         print(obtained_angles)
         assert math.allclose(obtained_angles, rescaled_angles)
 
-
-class TestExtractGPIGPI2Angles:
-    """Test utility function for extraction of GPI/GPI2 angles."""
-
-    @pytest.mark.parametrize("U", [test_case[0] for test_case in single_qubit_unitaries])
-    def test_extract_gpi_gpi2_angles(self, U):
+    @pytest.mark.parametrize("unitary", [test_case[0] for test_case in single_qubit_unitaries])
+    def test_extract_gpi_gpi2_angles(self, unitary):
         """Test that extracting GPI/GPI2 angles yields the correct operation."""
-        gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(U)
+        gamma, beta, alpha = extract_gpi2_gpi_gpi2_angles(unitary)
 
         with qml.tape.QuantumTape() as tape:
             GPI2(gamma, wires=0)
             GPI(beta, wires=0)
             GPI2(alpha, wires=0)
 
-        assert are_mats_equivalent(qml.matrix(tape), U)
+        assert are_mats_equivalent(qml.matrix(tape), unitary)
 
 
 class TestConvertToJSON:
@@ -115,10 +233,10 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 1000
         assert circuit_json["target"] == "simulator"
 
-        assert circuit_json["body"]["gateset"] == "native"
-        assert circuit_json["body"]["qubits"] == 1
+        assert circuit_json["input"]["gateset"] == "native"
+        assert circuit_json["input"]["qubits"] == 1
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 1
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
         assert circuit_contents[0]["target"] == 0
@@ -136,9 +254,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 1
+        assert circuit_json["input"]["qubits"] == 1
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 3
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
@@ -161,9 +279,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 3
+        assert circuit_json["input"]["qubits"] == 3
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 3
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)
@@ -187,9 +305,9 @@ class TestConvertToJSON:
         assert circuit_json["shots"] == 100
         assert circuit_json["target"] == "qpu"
 
-        assert circuit_json["body"]["qubits"] == 2
+        assert circuit_json["input"]["qubits"] == 2
 
-        circuit_contents = circuit_json["body"]["circuit"]
+        circuit_contents = circuit_json["input"]["circuit"]
         assert len(circuit_contents) == 4
 
         assert circuit_contents[0]["phase"] == 0.3 / (2 * np.pi)

@@ -1,0 +1,83 @@
+# To run all pre-commit checks, use:
+#
+#     pre-commit run -a
+#
+# To install pre-commit hooks that run every time you commit:
+#
+#     pre-commit install
+#
+# This file was constructed based on an example file provided by our friends
+# at TUM Chair for Design Automation - thanks!
+
+ci:
+  autoupdate_commit_msg: "update pre-commit hooks"
+  autofix_commit_msg: "pre-commit fixes"
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v4.6.0"
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  # Handling unwanted unicode characters
+  - repo: https://github.com/sirosen/texthooks
+    rev: "0.6.6"
+    hooks:
+      - id: fix-ligatures
+      - id: fix-smartquotes
+
+  # Check for common mistakes
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+      - id: rst-directive-colons
+      - id: rst-inline-touching-normal
+
+  # Check for spelling
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.3.0"
+    hooks:
+      - id: codespell
+
+  # Format configuration files with prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v4.0.0-alpha.8"
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, html, css, javascript, json]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.9
+    hooks:
+      - id: ruff
+        args: ["--fix", "--show-fixes"]
+        types_or: [python, pyi, jupyter]
+      - id: ruff-format
+        types_or: [python, pyi, jupyter]
+
+  # Also run Black on examples in the documentation
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.16.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies: [black==24.*]
+
+  # Catch common capitalization mistakes
+  - repo: local
+    hooks:
+      - id: disallow-caps
+        name: Disallow improper capitalization
+        language: pygrep
+        entry: PyBind|Numpy|Github|PyTest|Pennylane
+        exclude: .pre-commit-config.yaml

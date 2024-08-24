@@ -2,16 +2,17 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10761367.svg)](https://doi.org/10.5281/zenodo.10761367)
 
-Transpile and optimize your [PennyLane](https://github.com/pennylaneai/pennylane) circuits into
+Transpile and optimize your PennyLane circuits into
 IonQ's native trapped-ion gate set (GPI, GPI2, MS) with just a single extra line
 of code!
 
 ```python
 from ionizer.transforms import ionize
 
+
 @qml.qnode(dev)
 @ionize
-def circuit(x): 
+def circuit(x):
     qml.Hadamard(wires=0)
     qml.CNOT(wires=[0, 1])
     qml.RX(x, wires=1)
@@ -21,61 +22,62 @@ def circuit(x):
 ```pycon
 >>> qml.draw(circuit)(0.3)
 0: ──GPI2(0.00)─╭MS──GPI2(-1.57)─────────────────────────┤  <Z>
-1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-1.42)──GPI2(1.57)─┤     
+1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-1.42)──GPI2(1.57)─┤
 ```
-
 
 ## Installation
 
-Requirements:
- * PennyLane >= 0.33
 
-The Ionizer is not currently available via a package manager. To install, clone the repository and run
+The Ionizer is available via PyPI:
 
 ```
-python -m pip install .
+pip install ionizer
 ```
 
-or
+The core requirement is [PennyLane](https://pennylane.ai/) 0.37.
 
-```
-python setup.py install
-```
+Python versions 3.10-3.12 are supported and tested against.
 
-If you need to run Ionizer with a version of PennyLane between 0.29 and 0.32,
-please use version 0.1.2 of the package.
+To install from source, clone this repository and use
+[Poetry](https://python-poetry.org/) to install the dependencies listed in the
+`pyproject.toml` file.
 
 ## Examples
+
+For more detailed explanations and usage examples, please check the full
+online documentation.
 
 The Ionizer is implemented using [quantum function
 transforms](https://arxiv.org/abs/2202.13414), similar to PennyLane's [existing
 compilation
 tools](https://docs.pennylane.ai/en/stable/introduction/compiling_circuits.html). To
 compile and execute the circuit using trapped ion gates, the
-``@ionize`` decorator  performs the following steps:
+`@ionize` transform will
 
- * Decomposes all operations into Paulis/Pauli rotations, Hadamard, and CNOT 
- * Merges all single-qubit rotations
- * Converts everything except RZ to GPI/GPI2/MS gates (`@ionizer.transforms.convert_to_gpi`)
- * Virtually applies all RZ gates (`@ionizer.transforms.virtualize_rz_gates`)
- * Repeatedly applies gate fusion and commutation through MS gates which performs simplification based on some circuit identities (`@ionizer.transforms.single_qubit_fusion_gpi` and `@ionizer.transforms.commute_through_ms_gates`)
+ - Decompose all operations into Paulis/Pauli rotations, Hadamard, and CNOT
+ - Cancel inverses and merge single-qubit rotations
+ - Convert everything except RZ to GPI, GPI2, and MS gates
+ - Virtually apply RZ gates
+ - Repeatedly apply single-qubit gate fusion and commutation through MS gates,
+   and perform simplification based on a database of circuit identities.
 
 ```python
 from ionizer.transforms import ionize
+
 
 @qml.qnode(dev)
 @ionize
 def circuit_ionized(params):
     for idx in range(5):
         qml.Hadamard(wires=idx)
-        
+
     for idx in range(4):
         qml.RY(params[idx], wires=idx)
-        qml.CNOT(wires=[idx+1, idx])
-        
+        qml.CNOT(wires=[idx + 1, idx])
+
     for wire in dev.wires:
         qml.PauliX(wires=wire)
-        
+
     return qml.expval(qml.PauliX(0))
 ```
 
@@ -97,16 +99,20 @@ tensor(0.99500417, requires_grad=True)
 
 ```
 
-Note that while this comes packaged together as the ``@ionize`` transform, the
-individual transforms can also be accessed and used independently.
+The consistuent transforms can also be accessed and used independently.
 
-There is currently not direct support for other frameworks. However, if you would like to do this with a Qiskit circuit, it can be accomplished as follows through the [`pennylane-qiskit`](https://github.com/PennyLaneAI/pennylane-qiskit) package.
+There is currently not direct support for other frameworks. However, if you
+would like to apply the transforms to Qiskit circuits, this can be accomplished
+using the
+[`pennylane-qiskit`](https://github.com/PennyLaneAI/pennylane-qiskit) package as
+shown belown.
 
 ```python
 qiskit_circuit = QuantumCircuit(...)
 
 # Turns a Qiskit circuit into a PennyLane quantum function
 qfunc = qml.from_qiskit(qiskit_circuit)
+
 
 @qml.qnode(dev)
 @ionize
@@ -115,25 +121,31 @@ def pennylane_circuit():
     return qml.expval(qml.PauliX(0))
 ```
 
-
 ## Notes
 
 This package is a work in progress. While it has been verified to work on some
 fairly large circuits, we still need to work on:
- * finding circuit identities involving the 2-qubit gate
- * improving the documentation and usage instructions
- * ensuring differentiability of variational parameters
- * writing more tests (compile at your own risk!)
 
+- finding circuit identities involving the 2-qubit gate
+- ensuring differentiability of variational parameters
+- writing more tests (compile at your own risk!)
 
 ## Resources
 
- * [IonQ documentation](https://ionq.com/docs/getting-started-with-native-gates)
- * [Basic circuit compilation techniques for an ion-trap quantum machine](https://arxiv.org/abs/1603.07678)
-   
- ## Citing
+- [IonQ documentation](https://ionq.com/docs/getting-started-with-native-gates)
+- [Basic circuit compilation techniques for an ion-trap quantum machine](https://arxiv.org/abs/1603.07678)
 
- If you use the Ionizer as part of your workflow, we would appreciate if you cite it using the BibTeX below.
+
+## Contributing
+
+The Ionizer is available open source under the MIT License.  Contributions are
+welcome. Please open an issue if you are interested in contributing, or if you
+encounter a bug.
+
+
+## Reference
+
+If you use the Ionizer as part of your workflow, we would appreciate if you cite it using the BibTeX below.
 
 ```
 @software{di_matteo_2024_10761367,
