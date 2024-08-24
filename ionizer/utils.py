@@ -18,6 +18,7 @@
 Utility functions.
 """
 
+import pennylane as qml
 import numpy as np
 from pennylane import math
 
@@ -52,6 +53,26 @@ def are_mats_equivalent(unitary1, unitary2):
             return True
 
     return False
+
+
+def flag_non_equivalence(tape1, tape2):
+    """Check equivalence of two circuits up to a global phase.
+
+    Args:
+        tape1 (pennylane.QuantumTape): a quantum tape
+        tape2 (pennylane.QuantumTape): quantum tape to compare with ``tape1``
+
+    Raises:
+        ValueError if the two circuits are not equivalent.
+    """
+    # Compute matrix representation using a consistent wire order
+    joint_wires = qml.wires.Wires.all_wires([tape1.wires, tape2.wires])
+    matrix_1 = qml.matrix(tape1, wire_order=joint_wires)
+    matrix_2 = qml.matrix(tape2, wire_order=joint_wires)
+
+    if not are_mats_equivalent(matrix_1, matrix_2):
+        raise ValueError("Quantum circuits are not equivalent after transform.")
+
 
 
 def rescale_angles(angles, renormalize_for_json=False):

@@ -20,6 +20,12 @@ The main transform in this module, :func:`ionizer.transforms.ionize`,
 performs end-to-end transpilation and optimization of circuits. It calls a
 number of helper transforms which can also be used individually.
 
+All transforms contain a mechanism for under-the-hood equivalence checking (up
+to a global phase) through the ``verify_equivalence`` flag. When set, an error
+will be raised if the transpiled circuit is not equivalent to the original. For
+details and example usage see :ref:`basic_usage-equivalence_validation` and
+:func:`ionizer.utils.flag_non_equivalence`.
+
 """
 
 from typing import Sequence, Callable
@@ -32,7 +38,7 @@ from pennylane import math
 from pennylane.tape import QuantumTape
 from pennylane.transforms.optimization.optimization_utils import find_next_gate
 
-from .utils import rescale_angles, extract_gpi2_gpi_gpi2_angles
+from .utils import flag_non_equivalence, rescale_angles, extract_gpi2_gpi_gpi2_angles
 from .decompositions import decomp_map
 from .ops import GPI, GPI2
 from .identity_hunter import (
@@ -43,7 +49,7 @@ from .identity_hunter import (
 
 @qml.transform
 def commute_through_ms_gates(
-    tape: QuantumTape, direction="right"
+    tape: QuantumTape, direction="right", verify_equivalence=False
 ) -> (Sequence[QuantumTape], Callable):
     r"""Commute :math:`GPI` and :math:`GPI2` gates with special angle values
     through :class:`~ionizer.ops.MS` gates.
@@ -63,6 +69,9 @@ def commute_through_ms_gates(
         tape (pennylane.QuantumTape): A quantum tape to transform.
         direction (str): Either ``"right"`` (default) or ``"left"`` to indicate
             the direction gates should move (from a circuit diagram perspective).
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -152,6 +161,9 @@ def commute_through_ms_gates(
 
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
@@ -162,7 +174,7 @@ def commute_through_ms_gates(
 
 
 @qml.transform
-def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
+def virtualize_rz_gates(tape: QuantumTape, verify_equivalence=False) -> (Sequence[QuantumTape], Callable):
     r"""Apply :math:`RZ` gates virtually by adjusting the phase of adjacent
     :math:`GPI` and :math:`GPI2` gates.
 
@@ -179,7 +191,10 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
     .. math:: RZ(\phi) = GPI(0) GPI(-\phi/2).
 
     Args:
-        tape (pennylane.QuantumTape): A quantum tape to transform.
+        tape (pennylane.QuantumTape): A quantum tape to transform
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -294,6 +309,9 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
@@ -304,7 +322,7 @@ def virtualize_rz_gates(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
 
 
 @qml.transform
-def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
+def single_qubit_fusion_gpi(tape: QuantumTape, verify_equivalence=False) -> (Sequence[QuantumTape], Callable):
     r"""Simplify sequences of :math:`GPI` and :math:`GPI2` gates using gate
     fusion and circuit identities.
 
@@ -322,6 +340,9 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -435,6 +456,9 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
@@ -445,13 +469,16 @@ def single_qubit_fusion_gpi(tape: QuantumTape) -> (Sequence[QuantumTape], Callab
 
 
 @qml.transform
-def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTape], Callable):
+def convert_to_gpi(tape: QuantumTape, exclude_list=None, verify_equivalence=False) -> (Sequence[QuantumTape], Callable):
     r"""Transpile desired gates in a circuit to trapped-ion gates.
 
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
         exclude_list (list[str]): A list of names of gates to exclude from
             conversion (see the ionize transform for an example).
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -518,6 +545,9 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 
     new_tape = type(tape)(new_operations, tape.measurements, shots=tape.shots)
 
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
+
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results
         into a result for a single ``QuantumTape``.
@@ -528,7 +558,7 @@ def convert_to_gpi(tape: QuantumTape, exclude_list=None) -> (Sequence[QuantumTap
 
 
 @qml.transform
-def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
+def ionize(tape: QuantumTape, verify_equivalence=False) -> (Sequence[QuantumTape], Callable):
     r"""Apply a sequence of passes to transpile and optimize a circuit
     over the trapped-ion gate set :math:`GPI`, :math:`GPI2`, and :math:`MS`.
 
@@ -542,8 +572,17 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
           :math:`MS` gates, and perform simplification based on a database of
           circuit identities.
 
+    .. note::
+
+        When ``verify_equivalence`` is set to ``True``, equivalence checking up
+        to a global phase is performed with respect to the initial and final
+        circuit matrices only. It is not checked for intermediate transforms.
+    
     Args:
         tape (pennylane.QuantumTape): A quantum tape to transform.
+        verify_equivalence (bool): Whether to perform background equivalence
+            checking (up to global phase) of the circuit before and after the
+            transform.
 
     Returns:
         qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape],
@@ -599,6 +638,9 @@ def ionize(tape: QuantumTape) -> (Sequence[QuantumTape], Callable):
             optimized_tape, _ = single_qubit_fusion_gpi(optimized_tape[0])
 
     new_tape = type(tape)(optimized_tape[0].operations, tape.measurements, shots=tape.shots)
+
+    if verify_equivalence:
+        flag_non_equivalence(tape, new_tape)
 
     def null_postprocessing(results):
         """A postprocessing function returned by a transform that only converts the batch of results

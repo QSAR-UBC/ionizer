@@ -1,3 +1,5 @@
+.. _basic_usage:
+
 Basic usage
 ===========
 
@@ -63,64 +65,98 @@ constructed:
     >>> ionized_qnode(0.3)
     0.9553364891256048
 
+.. _basic_usage-equivalence_validation:
+
+Equivalence validation
+----------------------
+
+While all implemented transforms should preserve the behaviour of circuits, they
+nevertheless contain a mechanism for under-the-hood equivalence checking (up to
+a global phase). If the ``verify_equivalence`` flag is ``True``, an error will
+be raised if the transpiled circuit is not equivalent to the original. This flag
+is ``False`` by default because equivalence is checked at the unitary matrix
+level.
+
+.. code::
+
+    from functools import partial
+    import pennylane as qml
+    from ionizer.transforms import ionize
+
+    dev = qml.device("default.qubit", wires=2)
+
+    @qml.qnode(dev)
+    @partial(ionize, verify_equivalence=True)
+    def circuit(x):
+        qml.Hadamard(wires=0)
+        qml.CNOT(wires=[0, 1])
+        qml.RX(x, wires=1)
+        return qml.expval(qml.PauliZ(0) @ qml.PauliZ(1))
+
+For more details, see :func:`ionizer.utils.flag_non_equivalence`.
+
+Ionizer and gradients
+---------------------
 
 .. warning::
 
-   Full automatic differentiation is not currently supported by the Ionizer. It
-   is recommended to first construct the required circuits with the desired
-   parameters, then transpile that circuit for execution. This can be done by
-   applying the transform to one or more quantum tapes directly.
+   Full automatic differentiation is not currently supported by the Ionizer.
 
-   For example, the following code transpiles both quantum circuits required to
-   the parameter shift gradient of the circuit above.
+To execute circuits that evaluate gradients, is recommended to first construct
+the required circuits with the desired parameters, then transpile those circuit
+for execution. This can be done by applying the transform to one or more quantum
+tapes directly.
 
-   .. code::
+For example, the following code transpiles both quantum circuits required to the
+parameter shift gradient of the circuit defined at the top of this page.
 
-       from pennylane import numpy as np
+.. code::
 
-       # Execute the circuit once to construct the tape
-       x = np.array(0.5, requires_grad=True)
-       circuit(x)
+   from pennylane import numpy as np
 
-       # Compute tapes required for gradient, and processing function that
-       # evaluates the gradients based on results
-       gradient_tapes, gradient_fn = qml.gradients.param_shift(circuit.qtape)
+   # Execute the circuit once to construct the tape
+   x = np.array(0.5, requires_grad=True)
+   circuit(x)
 
-       for tape in gradient_tapes:
-           print(tape.draw(decimals=2))
-           print()
+   # Compute tapes required for gradient, and processing function that
+   # evaluates the gradients based on results
+   gradient_tapes, gradient_fn = qml.gradients.param_shift(circuit.qtape)
 
-       results = dev.execute(gradient_tapes)
-       print(f"Gradient from original tape execution = {gradient_fn(results)}", end="\n\n")
+   for tape in gradient_tapes:
+       print(tape.draw(decimals=2))
+       print()
 
-       # Transpile each of the gradient tapes. The same processing function
-       # can be applied to the results of the transpiled tapes.
-       transpiled_gradient_tapes, _ = ionize(gradient_tapes)
+   results = dev.execute(gradient_tapes)
+   print(f"Gradient from original tape execution = {gradient_fn(results)}", end="\n\n")
 
-       for tape in transpiled_gradient_tapes:
-           print(tape.draw(decimals=2))
-           print()
+   # Transpile each of the gradient tapes. The same processing function
+   # can be applied to the results of the transpiled tapes.
+   transpiled_gradient_tapes, _ = ionize(gradient_tapes)
 
-       transpiled_results = dev.execute(transpiled_gradient_tapes)
-       print(f"Gradient from transpiled tape execution = {gradient_fn(transpiled_results)}")
+   for tape in transpiled_gradient_tapes:
+       print(tape.draw(decimals=2))
+       print()
 
-   The following output, showing both original and transpiled versions of the
-   gradient tape, is
+   transpiled_results = dev.execute(transpiled_gradient_tapes)
+   print(f"Gradient from transpiled tape execution = {gradient_fn(transpiled_results)}")
 
-   .. code::
+The following output, showing both original and transpiled versions of the
+gradient tape, is
 
-       0: ──H─╭●───────────┤ ╭<Z@Z>
-       1: ────╰X──RX(2.07)─┤ ╰<Z@Z>
+.. code::
 
-       0: ──H─╭●────────────┤ ╭<Z@Z>
-       1: ────╰X──RX(-1.07)─┤ ╰<Z@Z>
+   0: ──H─╭●───────────┤ ╭<Z@Z>
+   1: ────╰X──RX(2.07)─┤ ╰<Z@Z>
 
-       Gradient from original tape execution = -0.479425538604203
+   0: ──H─╭●────────────┤ ╭<Z@Z>
+   1: ────╰X──RX(-1.07)─┤ ╰<Z@Z>
 
-       0: ──GPI2(0.00)─╭MS──GPI2(-1.57)─────────────────────────┤ ╭<Z@Z>
-       1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-0.54)──GPI2(1.57)─┤ ╰<Z@Z>
+   Gradient from original tape execution = -0.479425538604203
 
-       0: ──GPI2(0.00)─╭MS──GPI2(-1.57)─────────────────────────┤ ╭<Z@Z>
-       1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-2.11)──GPI2(1.57)─┤ ╰<Z@Z>
+   0: ──GPI2(0.00)─╭MS──GPI2(-1.57)─────────────────────────┤ ╭<Z@Z>
+   1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-0.54)──GPI2(1.57)─┤ ╰<Z@Z>
 
-       Gradient from transpiled tape execution = -0.479425538604203
+   0: ──GPI2(0.00)─╭MS──GPI2(-1.57)─────────────────────────┤ ╭<Z@Z>
+   1: ──GPI2(3.14)─╰MS──GPI2(1.57)───GPI(-2.11)──GPI2(1.57)─┤ ╰<Z@Z>
+
+   Gradient from transpiled tape execution = -0.479425538604203
