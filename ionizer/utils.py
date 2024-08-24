@@ -23,7 +23,7 @@ from pennylane import math
 
 
 def are_mats_equivalent(unitary1, unitary2):
-    r"""Checks the equivalence of two unitary matrices.
+    r"""Checks the equivalence of two unitary matrices up to a global phase.
 
     Args:
         unitary1 (tensor): First unitary matrix.
@@ -32,6 +32,15 @@ def are_mats_equivalent(unitary1, unitary2):
     Returns:
         bool: True if the two matrices are equivalent up to a global phase,
         False otherwise.
+
+    **Example**
+
+    .. code::
+
+        >>> matrix_T = np.diag([1, 1j])
+        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi/4), np.exp(1j * np.pi/4)])
+        >>> are_mats_equivalent(matrix_T, matrix_RZ)
+        True
     """
     mat_product = math.dot(unitary1, math.conj(math.T(unitary2)))
 
@@ -46,19 +55,33 @@ def are_mats_equivalent(unitary1, unitary2):
 
 
 def rescale_angles(angles, renormalize_for_json=False):
-    r"""Rescale gate rotation angles into a fixed range between :math:`-\pi` and
-    :math:`\pi`.
+    r"""Rescale gate rotation angles into a fixed range.
+
+    By default, rescales between :math:`-\pi` and :math:`\pi`. However, IonQ's
+    native gate parameters are defined in terms of "turns", rather than radians,
+    where 1 turn is equivalent to :math:`2\pi`. Setting ``renormalize_for_json``
+    to ``True`` converts radians to turns.  See the `IonQ
+    documentation <https://docs.ionq.com/api-reference/v0.3/native-gates-api>`_
+    for more information.
 
     Args:
         angles (tensor): The angles to rescale.
-
         renormalize_for_json (bool): If ``True``, rescale angles into the range
-            :math:`-1` to :math:`1` (:math:`-2\pi` to :math:`2\pi`), which is
-            the range accepted by IonQ's native gate input specs. Otherwise,
+            :math:`-1` to :math:`1` (:math:`-2\pi` to :math:`2\pi`). Otherwise,
             rescale to within :math:`-\pi` to :math:`\pi`.
 
-    Return:
-        (tensor): The rescaled angles.
+    Returns:
+        tensor: The rescaled angles.
+
+    **Example**
+
+    .. code::
+
+        >>> angles = np.array([-4, -2, 0, -2, 4])
+        >>> rescale_angles(angles)
+        [ 2.28318531 -2.          0.         -2.         -2.28318531]
+        >>> rescale_angles(angles, renormalize_for_json=True)
+        [ 0.36338023 -0.31830989  0.         -0.31830989 -0.36338023]
 
     """
     rescaled_angles = math.arctan2(math.sin(angles), math.cos(angles))
@@ -85,9 +108,22 @@ def extract_gpi2_gpi_gpi2_angles(unitary):
     Args:
         unitary (tensor): A unitary matrix.
 
-    Returns: tensor: Rotation angles for the :math:`GPI` and :math:`GPI2`
+    Returns:
+        tensor: Rotation angles for the :math:`GPI` and :math:`GPI2`
         gates. The order of the returned angles corresponds to the order in
         which they would appear in a circuit, i.e., ``[gamma, beta, alpha]``.
+
+    **Example**
+
+    .. code::
+
+        >>> matrix_RZ = np.diag([np.exp(-1j * np.pi/4), np.exp(1j * np.pi/4)])
+        >>> angles = extract_gpi2_gpi_gpi2_angles(matrix_RZ)
+        >>> angles
+        [ 2.35619449  3.14159265 -2.35619449]
+        >>> recovered_matrix = np.linalg.multi_dot([op.compute_matrix(angle) for op, angle in zip([GPI2, GPI, GPI2], angles[::-1])])
+        >>> are_mats_equivalent(matrix_RZ, recovered_matrix)
+        True
 
     """
     det = math.angle(math.linalg.det(unitary))
@@ -110,6 +146,14 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
     """Convert a quantum tape consisting of :math:`GPI`, :math:`GPI2` and
     :math:`MS` operations into a JSON object suitable for job submission to hardware.
 
+    Please see the `IonQ webpage
+    <https://docs.ionq.com/api-reference/v0.3/native-gates-api>`_ for full documentation of the
+    job submission API.
+
+    Note that this function is not tested against the API in an automated, or
+    manual way. If you this function needs to be updated to work with API changes,
+    please `open an issue <https://github.com/QSAR-UBC/ionizer/issues>`_.
+
     Args:
         tape (QuantumTape): The quantum tape of the circuit to send.
         name (str): Desired name of the job.
@@ -118,7 +162,39 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
             particular hardware device.
 
     Returns:
-        Dict: JSON formatted for submission to hardware.
+        Dict: JSON formatted for submission to IonQ hardware.
+
+    **Example**
+
+    .. code::
+
+        dev = qml.device("default.qubit", wires=2)
+
+        @qml.qnode(dev)
+        @ionize
+        def circuit():
+            qml.Hadamard(wires=0)
+            qml.CNOT(wires=[0, 1])
+            return qml.probs()
+
+        # Note that the circuit must be executed once to generate the tape.
+        circuit()
+
+        json_object = tape_to_json(circuit.qtape, "job_name", 1024, "simulator")
+
+    .. code::
+
+        >>> pprint(json_object)
+        {'input': {'circuit': [{'gate': 'gpi2', 'phase': 0.0, 'target': 0},
+                              {'gate': 'gpi2', 'phase': 0.5, 'target': 1},
+                              {'gate': 'ms', 'phases': [0, 0], 'targets': [0, 1]},
+                              {'gate': 'gpi2', 'phase': -0.25, 'target': 0}],
+                  'gateset': 'native',
+                  'qubits': 2},
+         'lang': 'json',
+         'name': 'job_name',
+         'shots': 1024,
+         'target': 'simulator'}
 
     """
 
@@ -128,9 +204,9 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
     circuit_json["target"] = target
     circuit_json["name"] = name
 
-    circuit_json["body"] = {}
-    circuit_json["body"]["gateset"] = "native"
-    circuit_json["body"]["qubits"] = len(tape.wires)
+    circuit_json["input"] = {}
+    circuit_json["input"]["gateset"] = "native"
+    circuit_json["input"]["qubits"] = len(tape.wires)
 
     circuit_op_list = []
 
@@ -148,6 +224,6 @@ def tape_to_json(tape, name, shots=100, target="simulator"):
 
         circuit_op_list.append(gate_dict)
 
-    circuit_json["body"]["circuit"] = circuit_op_list
+    circuit_json["input"]["circuit"] = circuit_op_list
 
     return circuit_json

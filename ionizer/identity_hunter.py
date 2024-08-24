@@ -168,7 +168,7 @@ def lookup_gate_identity(gates):
 
         >>> gate_list = [GPI(np.pi/4, wires=0), GPI2(-3*np.pi/4)]
         >>> lookup_gate_identity(gate_list)
-        [GPI2(0.7853981633974483, wires=[0])]        
+        [GPI2(0.7853981633974483, wires=[0])]
 
     """
 
